@@ -1,7 +1,8 @@
-import { Lexer } from "https://esm.sh/chevrotain@10.4.1";
+import { CompilangLexer } from "./lexer/index.ts";
 
 export function run() {
-  console.log("Test");
+  const res = CompilangLexer.tokenize('<x> = "asd" + -1');
+  console.log(res);
 }
 
 run();
