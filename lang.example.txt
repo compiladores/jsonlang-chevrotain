@@ -1,14 +1,22 @@
 <x> = 1;
-<y: int> = 2;
+<y: number> = 2;
 <z> = "1 2 3 4";
 
-<asd(a: int, b: int)> {
+<<Person>> = {
+  name: string;
+  age: number;
+}
+
+<asd(a: number, b: number): number> {
   return a + b;
 }
 
+<asd2(n: string, a: number): Person> {
+  return { name: n, age: a };
+}
+
 while ((x < 10) and (y eq 2) or (z ne null)) {
-  print <| asd(x, y)
-  print <| toString <| asd(y, x) 
+  print->(asd->(y, x))
 }
 
 for (<i> = 1; i < 10; i = i + 1) {
