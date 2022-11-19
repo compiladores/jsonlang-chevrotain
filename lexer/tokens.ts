@@ -15,6 +15,11 @@ export const If = createToken({
   pattern: /if/,
   longer_alt: Identifier,
 });
+export const Elseif = createToken({
+  name: "Elseif",
+  pattern: /elseif/,
+  longer_alt: Identifier,
+});
 export const Else = createToken({
   name: "Else",
   pattern: /else/,
@@ -148,6 +153,7 @@ export const WhiteSpace = createToken({
 
 export const tokens = [
   If,
+  Elseif,
   Else,
   While,
   Do,

@@ -25,4 +25,8 @@ for (<i> = 1; i < 10; i = i + 1) {
 
 if (y + 1 eq 2) {
   <x> = y + 1;
+} elseif (true) {
+  <x> = y;
+} else {
+  <x> = 0;
 }
