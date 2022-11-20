@@ -2,13 +2,8 @@ import { CompilangLexer } from "./lexer/index.ts";
 import { parser } from "./parser/index.ts";
 import { CSTVisitor } from "./CSTVisitor/index.ts";
 
-export function run() {
-  const res = CompilangLexer.tokenize(`
-  <v> = {
-    a: sum->(2, 3),
-    b: [1, 2]
-  };
-  `);
+export function run(code: string) {
+  const res = CompilangLexer.tokenize(code);
 
   parser.input = res.tokens;
   const cst = parser.topRule();
@@ -19,7 +14,7 @@ export function run() {
   }
 
   const ast = CSTVisitor.visit(cst);
-  console.log(JSON.stringify(ast));
+  return ast;
 }
 
-run();
+run(";");

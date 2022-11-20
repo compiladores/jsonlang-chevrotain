@@ -192,7 +192,7 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
     if (!ctx.Identifier || !ctx.expression) return retVal;
     for (let i = 0; i < ctx.Identifier.length; i++) {
       const key = ctx.Identifier[i].image;
-      const value = this.visit(ctx.expression);
+      const value = this.visit(ctx.expression[i]);
       retVal.dict.push({ [key]: value });
     }
     return retVal;
