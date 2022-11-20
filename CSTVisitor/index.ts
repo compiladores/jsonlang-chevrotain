@@ -4,6 +4,7 @@ import {
   ArrayCstChildren,
   BlockStatementCstChildren,
   BreakStatementCstChildren,
+  CallExpressionCstChildren,
   CallStatementCstChildren,
   ContinueStatementCstChildren,
   DictionaryCstChildren,
@@ -98,6 +99,10 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
   }
 
   callStatement(ctx: CallStatementCstChildren) {
+    return this.visit(ctx.callExpression);
+  }
+
+  callExpression(ctx: CallExpressionCstChildren) {
     const args = ctx.funcargs.flatMap((arg) => this.visit(arg));
     return {
       call: ctx.Identifier[0].image,
@@ -174,6 +179,7 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
       return ctx.StringLiteral[0].image.replace(/^"(.*)"$/, "$1");
     if (ctx.array) return this.visit(ctx.array);
     if (ctx.dictionary) return this.visit(ctx.dictionary);
+    if (ctx.callExpression) return this.visit(ctx.callExpression);
   }
 
   array(ctx: ArrayCstChildren) {

@@ -173,11 +173,20 @@ export interface CallStatementCstNode extends CstNode {
 }
 
 export type CallStatementCstChildren = {
+  callExpression: CallExpressionCstNode[];
+  SemiColon: IToken[];
+};
+
+export interface CallExpressionCstNode extends CstNode {
+  name: "callExpression";
+  children: CallExpressionCstChildren;
+}
+
+export type CallExpressionCstChildren = {
   Identifier: IToken[];
   Minus: IToken[];
   RAngleBracket: IToken[];
   funcargs: FuncargsCstNode[];
-  SemiColon: IToken[];
 };
 
 export interface FuncargsCstNode extends CstNode {
@@ -221,13 +230,14 @@ export interface SimpleExpressionCstNode extends CstNode {
 }
 
 export type SimpleExpressionCstChildren = {
+  callExpression?: CallExpressionCstNode[];
+  dictionary?: DictionaryCstNode[];
+  array?: ArrayCstNode[];
   Integer?: IToken[];
   StringLiteral?: IToken[];
   Identifier?: IToken[];
   True?: IToken[];
   False?: IToken[];
-  array?: ArrayCstNode[];
-  dictionary?: DictionaryCstNode[];
 };
 
 export interface ArrayCstNode extends CstNode {
@@ -271,6 +281,7 @@ export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   continueStatement(children: ContinueStatementCstChildren, param?: IN): OUT;
   returnStatement(children: ReturnStatementCstChildren, param?: IN): OUT;
   callStatement(children: CallStatementCstChildren, param?: IN): OUT;
+  callExpression(children: CallExpressionCstChildren, param?: IN): OUT;
   funcargs(children: FuncargsCstChildren, param?: IN): OUT;
   parenExpression(children: ParenExpressionCstChildren, param?: IN): OUT;
   expression(children: ExpressionCstChildren, param?: IN): OUT;

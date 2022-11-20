@@ -32,11 +32,6 @@ import {
   While,
 } from "../lexer/tokens.ts";
 
-//TODO
-/**
- * Call expression
- */
-
 class CompilangParser extends CstParser {
   constructor() {
     super(tokens);
@@ -165,11 +160,15 @@ class CompilangParser extends CstParser {
   });
 
   callStatement = this.RULE("callStatement", () => {
+    this.SUBRULE(this.callExpression);
+    this.CONSUME(SemiColon);
+  });
+
+  callExpression = this.RULE("callExpression", () => {
     this.CONSUME(Identifier);
     this.CONSUME(Minus);
     this.CONSUME(RAngleBracket);
     this.SUBRULE(this.funcargs);
-    this.CONSUME(SemiColon);
   });
 
   funcargs = this.RULE("funcargs", () => {
@@ -205,14 +204,14 @@ class CompilangParser extends CstParser {
 
   simpleExpression = this.RULE("simpleExpression", () => {
     this.OR([
+      { ALT: () => this.SUBRULE(this.callExpression) },
+      { ALT: () => this.SUBRULE(this.dictionary) },
+      { ALT: () => this.SUBRULE(this.array) },
       { ALT: () => this.CONSUME(Integer) },
       { ALT: () => this.CONSUME(StringLiteral) },
       { ALT: () => this.CONSUME(Identifier) },
       { ALT: () => this.CONSUME(True) },
       { ALT: () => this.CONSUME(False) },
-      { ALT: () => this.SUBRULE(this.array) },
-      { ALT: () => this.SUBRULE(this.dictionary) },
-      //TODO: dict
       //TODO: paren expression -> (1 + (3 - (x)))
     ]);
   });
