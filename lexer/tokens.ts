@@ -117,14 +117,24 @@ export const Lte = createToken({
 export const LCurly = createToken({ name: "LCurly", pattern: /\{/ });
 export const RCurly = createToken({ name: "RCurly", pattern: /\}/ });
 export const LParen = createToken({ name: "LParen", pattern: /\(/ });
-export const Equals = createToken({ name: "Equals", pattern: /\=/ });
 export const RParen = createToken({ name: "RParen", pattern: /\)/ });
-export const LBracket = createToken({ name: "LBracket", pattern: /\</ });
-export const RBracket = createToken({ name: "RBracket", pattern: /\>/ });
+export const Equals = createToken({ name: "Equals", pattern: /\=/ });
+export const LAngleBracket = createToken({
+  name: "LAngleBracket",
+  pattern: /\</,
+});
+export const RAngleBracket = createToken({
+  name: "RAngleBracket",
+  pattern: /\>/,
+});
+export const LBracket = createToken({ name: "LBracket", pattern: /\[/ });
+export const RBracket = createToken({ name: "RBracket", pattern: /\]/ });
 export const Pipe = createToken({ name: "Pipe", pattern: /\|/ });
 export const SemiColon = createToken({ name: "SemiColon", pattern: /\;/ });
 export const Colon = createToken({ name: "Colon", pattern: /\:/ });
 export const Comma = createToken({ name: "Comma", pattern: /\,/ });
+export const True = createToken({ name: "True", pattern: /true/ });
+export const False = createToken({ name: "False", pattern: /false/ });
 export const Plus = createToken({
   name: "Plus",
   pattern: /\+/,
@@ -152,6 +162,8 @@ export const WhiteSpace = createToken({
 });
 
 export const tokens = [
+  Unop,
+  Binop,
   If,
   Elseif,
   Else,
@@ -182,6 +194,8 @@ export const tokens = [
   SemiColon,
   Colon,
   Comma,
+  True,
+  False,
   Plus,
   Minus,
   Times,

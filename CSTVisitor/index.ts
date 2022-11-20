@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { parser } from "../parser/index.ts";
 import {
+  ArrayCstChildren,
   BlockStatementCstChildren,
   BreakStatementCstChildren,
   CallStatementCstChildren,
@@ -8,12 +9,13 @@ import {
   DoUntilStatementCstChildren,
   EmptyStatementCstChildren,
   ExpressionCstChildren,
-  ExpressionListCstChildren,
   ForStatementCstChildren,
+  FuncargsCstChildren,
   FunctionStatementCstChildren,
   IfStatementCstChildren,
   ParenExpressionCstChildren,
   ReturnStatementCstChildren,
+  SimpleExpressionCstChildren,
   StatementCstChildren,
   TopRuleCstChildren,
   VariableStatementCstChildren,
@@ -95,7 +97,7 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
   }
 
   callStatement(ctx: CallStatementCstChildren) {
-    const args = ctx.expressionList.flatMap((arg) => this.visit(arg));
+    const args = ctx.funcargs.flatMap((arg) => this.visit(arg));
     return {
       call: ctx.Identifier[0].image,
       args,
@@ -137,7 +139,7 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
     return "continue";
   }
 
-  expressionList(ctx: ExpressionListCstChildren) {
+  funcargs(ctx: FuncargsCstChildren) {
     if (!ctx.expression) return [];
     return ctx.expression.map((expr) => this.visit(expr));
   }
@@ -147,8 +149,34 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
   }
 
   expression(ctx: ExpressionCstChildren) {
-    //TODO: terminar cuando este la expression
-    return +ctx.Integer[0].image;
+    let retVal = null;
+    if (ctx.Unop && ctx.expression) {
+      retVal = { unop: ctx.Unop[0].image, arg: this.visit(ctx.expression) };
+    }
+    if (ctx.simpleExpression) retVal = this.visit(ctx.simpleExpression);
+    if (ctx.Binop && ctx.expression) {
+      retVal = {
+        binop: ctx.Binop[0].image,
+        argl: retVal,
+        argr: this.visit(ctx.expression),
+      };
+    }
+    return retVal;
+  }
+
+  simpleExpression(ctx: SimpleExpressionCstChildren) {
+    if (ctx.Integer) return +ctx.Integer[0].image;
+    if (ctx.False) return false;
+    if (ctx.True) return true;
+    if (ctx.Identifier) return ctx.Identifier[0].image;
+    if (ctx.StringLiteral)
+      return ctx.StringLiteral[0].image.replace(/^"(.*)"$/, "$1");
+    if (ctx.array) return this.visit(ctx.array);
+  }
+
+  array(ctx: ArrayCstChildren) {
+    if (!ctx.expression) return [];
+    return ctx.expression.map((expr) => this.visit(expr));
   }
 }
 

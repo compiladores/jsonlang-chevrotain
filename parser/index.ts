@@ -1,4 +1,5 @@
 import { CstParser, Rule } from "https://esm.sh/chevrotain@10.4.1";
+import { Binop, Unop } from "../lexer/categories.ts";
 import {
   Break,
   Comma,
@@ -7,28 +8,32 @@ import {
   Else,
   Elseif,
   Equals,
+  False,
   For,
   Identifier,
   If,
   Integer,
+  LAngleBracket,
   LBracket,
   LCurly,
   LParen,
   Minus,
+  RAngleBracket,
   RBracket,
   RCurly,
   Return,
   RParen,
   SemiColon,
+  StringLiteral,
   tokens,
+  True,
   Until,
   While,
 } from "../lexer/tokens.ts";
 
 //TODO
 /**
- * Expression
- * Call as expression
+ * Call expression
  */
 
 class CompilangParser extends CstParser {
@@ -65,9 +70,9 @@ class CompilangParser extends CstParser {
   });
 
   variableStatement = this.RULE("variableStatement", () => {
-    this.CONSUME(LBracket);
+    this.CONSUME(LAngleBracket);
     this.CONSUME(Identifier);
-    this.CONSUME(RBracket);
+    this.CONSUME(RAngleBracket);
     this.CONSUME(Equals);
     this.SUBRULE(this.expression);
     this.CONSUME(SemiColon);
@@ -125,7 +130,7 @@ class CompilangParser extends CstParser {
   });
 
   functionStatement = this.RULE("functionStatement", () => {
-    this.CONSUME(LBracket);
+    this.CONSUME(LAngleBracket);
     this.CONSUME(Identifier);
     this.CONSUME(LParen);
     this.MANY_SEP({
@@ -133,7 +138,7 @@ class CompilangParser extends CstParser {
       DEF: () => this.CONSUME2(Identifier),
     });
     this.CONSUME(RParen);
-    this.CONSUME(RBracket);
+    this.CONSUME(RAngleBracket);
     this.SUBRULE(this.blockStatement);
   });
 
@@ -161,12 +166,12 @@ class CompilangParser extends CstParser {
   callStatement = this.RULE("callStatement", () => {
     this.CONSUME(Identifier);
     this.CONSUME(Minus);
-    this.CONSUME(RBracket);
-    this.SUBRULE(this.expressionList);
+    this.CONSUME(RAngleBracket);
+    this.SUBRULE(this.funcargs);
     this.CONSUME(SemiColon);
   });
 
-  expressionList = this.RULE("expressionList", () => {
+  funcargs = this.RULE("funcargs", () => {
     this.CONSUME(LParen);
     this.MANY_SEP({
       SEP: Comma,
@@ -182,8 +187,41 @@ class CompilangParser extends CstParser {
   });
 
   expression = this.RULE("expression", () => {
-    //TODO: complete expression
-    this.CONSUME(Integer);
+    this.OR([
+      { ALT: () => this.SUBRULE(this.simpleExpression) },
+      {
+        ALT: () => {
+          this.CONSUME(Unop);
+          this.SUBRULE(this.expression);
+        },
+      },
+    ]);
+    this.MANY(() => {
+      this.CONSUME(Binop);
+      this.SUBRULE2(this.expression);
+    });
+  });
+
+  simpleExpression = this.RULE("simpleExpression", () => {
+    this.OR([
+      { ALT: () => this.CONSUME(Integer) },
+      { ALT: () => this.CONSUME(StringLiteral) },
+      { ALT: () => this.CONSUME(Identifier) },
+      { ALT: () => this.CONSUME(True) },
+      { ALT: () => this.CONSUME(False) },
+      { ALT: () => this.SUBRULE(this.array) },
+      //TODO: dict
+      //TODO: paren expression -> (1 + (3 - (x)))
+    ]);
+  });
+
+  array = this.RULE("array", () => {
+    this.CONSUME(LBracket);
+    this.MANY_SEP({
+      SEP: Comma,
+      DEF: () => this.SUBRULE(this.expression),
+    });
+    this.CONSUME(RBracket);
   });
 }
 

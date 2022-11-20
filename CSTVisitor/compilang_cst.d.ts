@@ -48,9 +48,9 @@ export interface VariableStatementCstNode extends CstNode {
 }
 
 export type VariableStatementCstChildren = {
-  LBracket: IToken[];
+  LAngleBracket: IToken[];
   Identifier: IToken[];
-  RBracket: IToken[];
+  RAngleBracket: IToken[];
   Equals: IToken[];
   expression: ExpressionCstNode[];
   SemiColon: IToken[];
@@ -126,12 +126,12 @@ export interface FunctionStatementCstNode extends CstNode {
 }
 
 export type FunctionStatementCstChildren = {
-  LBracket: IToken[];
+  LAngleBracket: IToken[];
   Identifier: IToken[];
   LParen: IToken[];
   Comma?: IToken[];
   RParen: IToken[];
-  RBracket: IToken[];
+  RAngleBracket: IToken[];
   blockStatement: BlockStatementCstNode[];
 };
 
@@ -175,17 +175,17 @@ export interface CallStatementCstNode extends CstNode {
 export type CallStatementCstChildren = {
   Identifier: IToken[];
   Minus: IToken[];
-  RBracket: IToken[];
-  expressionList: ExpressionListCstNode[];
+  RAngleBracket: IToken[];
+  funcargs: FuncargsCstNode[];
   SemiColon: IToken[];
 };
 
-export interface ExpressionListCstNode extends CstNode {
-  name: "expressionList";
-  children: ExpressionListCstChildren;
+export interface FuncargsCstNode extends CstNode {
+  name: "funcargs";
+  children: FuncargsCstChildren;
 }
 
-export type ExpressionListCstChildren = {
+export type FuncargsCstChildren = {
   LParen: IToken[];
   expression?: ExpressionCstNode[];
   Comma?: IToken[];
@@ -209,7 +209,36 @@ export interface ExpressionCstNode extends CstNode {
 }
 
 export type ExpressionCstChildren = {
-  Integer: IToken[];
+  simpleExpression?: SimpleExpressionCstNode[];
+  Unop?: IToken[];
+  expression?: ExpressionCstNode[];
+  Binop?: IToken[];
+};
+
+export interface SimpleExpressionCstNode extends CstNode {
+  name: "simpleExpression";
+  children: SimpleExpressionCstChildren;
+}
+
+export type SimpleExpressionCstChildren = {
+  Integer?: IToken[];
+  StringLiteral?: IToken[];
+  Identifier?: IToken[];
+  True?: IToken[];
+  False?: IToken[];
+  array?: ArrayCstNode[];
+};
+
+export interface ArrayCstNode extends CstNode {
+  name: "array";
+  children: ArrayCstChildren;
+}
+
+export type ArrayCstChildren = {
+  LBracket: IToken[];
+  expression?: ExpressionCstNode[];
+  Comma?: IToken[];
+  RBracket: IToken[];
 };
 
 export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
@@ -227,7 +256,9 @@ export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   continueStatement(children: ContinueStatementCstChildren, param?: IN): OUT;
   returnStatement(children: ReturnStatementCstChildren, param?: IN): OUT;
   callStatement(children: CallStatementCstChildren, param?: IN): OUT;
-  expressionList(children: ExpressionListCstChildren, param?: IN): OUT;
+  funcargs(children: FuncargsCstChildren, param?: IN): OUT;
   parenExpression(children: ParenExpressionCstChildren, param?: IN): OUT;
   expression(children: ExpressionCstChildren, param?: IN): OUT;
+  simpleExpression(children: SimpleExpressionCstChildren, param?: IN): OUT;
+  array(children: ArrayCstChildren, param?: IN): OUT;
 }
