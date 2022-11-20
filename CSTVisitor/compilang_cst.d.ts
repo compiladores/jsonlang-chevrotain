@@ -227,6 +227,7 @@ export type SimpleExpressionCstChildren = {
   True?: IToken[];
   False?: IToken[];
   array?: ArrayCstNode[];
+  dictionary?: DictionaryCstNode[];
 };
 
 export interface ArrayCstNode extends CstNode {
@@ -239,6 +240,20 @@ export type ArrayCstChildren = {
   expression?: ExpressionCstNode[];
   Comma?: IToken[];
   RBracket: IToken[];
+};
+
+export interface DictionaryCstNode extends CstNode {
+  name: "dictionary";
+  children: DictionaryCstChildren;
+}
+
+export type DictionaryCstChildren = {
+  LCurly: IToken[];
+  Identifier?: IToken[];
+  Colon?: IToken[];
+  expression?: ExpressionCstNode[];
+  Comma?: IToken[];
+  RCurly: IToken[];
 };
 
 export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
@@ -261,4 +276,5 @@ export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   expression(children: ExpressionCstChildren, param?: IN): OUT;
   simpleExpression(children: SimpleExpressionCstChildren, param?: IN): OUT;
   array(children: ArrayCstChildren, param?: IN): OUT;
+  dictionary(children: DictionaryCstChildren, param?: IN): OUT;
 }

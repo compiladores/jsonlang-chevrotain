@@ -2,6 +2,7 @@ import { CstParser, Rule } from "https://esm.sh/chevrotain@10.4.1";
 import { Binop, Unop } from "../lexer/categories.ts";
 import {
   Break,
+  Colon,
   Comma,
   Continue,
   Do,
@@ -210,6 +211,7 @@ class CompilangParser extends CstParser {
       { ALT: () => this.CONSUME(True) },
       { ALT: () => this.CONSUME(False) },
       { ALT: () => this.SUBRULE(this.array) },
+      { ALT: () => this.SUBRULE(this.dictionary) },
       //TODO: dict
       //TODO: paren expression -> (1 + (3 - (x)))
     ]);
@@ -222,6 +224,19 @@ class CompilangParser extends CstParser {
       DEF: () => this.SUBRULE(this.expression),
     });
     this.CONSUME(RBracket);
+  });
+
+  dictionary = this.RULE("dictionary", () => {
+    this.CONSUME(LCurly);
+    this.MANY_SEP({
+      SEP: Comma,
+      DEF: () => {
+        this.CONSUME(Identifier);
+        this.CONSUME(Colon);
+        this.SUBRULE(this.expression);
+      },
+    });
+    this.CONSUME(RCurly);
   });
 }
 

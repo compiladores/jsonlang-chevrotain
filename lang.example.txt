@@ -7,6 +7,15 @@
   age: number;
 }
 
+<w: Person> = {
+  name: "test",
+  age: 30,
+}
+
+<v> = {
+  a: 2,
+}
+
 <asd(a: number, b: number): number> {
   return a + b;
 }

@@ -4,7 +4,28 @@ import { CSTVisitor } from "./CSTVisitor/index.ts";
 
 export function run() {
   const res = CompilangLexer.tokenize(`
-    return 1 + 1 + 2;
+  ;
+  break;
+  continue;
+  {
+    break;
+  }
+  <x> = 1;
+  while (1) {
+    break;
+  }
+  do {
+    continue;
+  } until (1);
+  <test(a, b, c)> { ; }
+  test->(1, 1, 1);
+  return 1;
+  if (1) {;} elseif (1) {<x> = 1;} else {break;}
+  for(x=1;1;1) {;}
+  for(x=1;1;) {;}
+  <v> = {
+    a: -2
+  };
   `);
 
   parser.input = res.tokens;
@@ -16,7 +37,7 @@ export function run() {
   }
 
   const ast = CSTVisitor.visit(cst);
-  console.log(JSON.stringify(ast));
+  console.log(ast);
 }
 
 run();

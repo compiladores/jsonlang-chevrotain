@@ -870,6 +870,16 @@
                 "idx": 0
               }
             ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "dictionary",
+                "idx": 0
+              }
+            ]
           }
         ]
       }
@@ -911,6 +921,59 @@
         "label": "RBracket",
         "idx": 0,
         "pattern": "\\]"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "dictionary",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LCurly",
+        "label": "LCurly",
+        "idx": 0,
+        "pattern": "\\{"
+      },
+      {
+        "type": "RepetitionWithSeparator",
+        "idx": 0,
+        "separator": {
+          "type": "Terminal",
+          "name": "Comma",
+          "label": "Comma",
+          "idx": 1,
+          "pattern": "\\,"
+        },
+        "definition": [
+          {
+            "type": "Terminal",
+            "name": "Identifier",
+            "label": "Identifier",
+            "idx": 0,
+            "pattern": "[a-zA-Z]\\w*"
+          },
+          {
+            "type": "Terminal",
+            "name": "Colon",
+            "label": "Colon",
+            "idx": 0,
+            "pattern": "\\:"
+          },
+          {
+            "type": "NonTerminal",
+            "name": "expression",
+            "idx": 0
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "RCurly",
+        "label": "RCurly",
+        "idx": 0,
+        "pattern": "\\}"
       }
     ]
   }

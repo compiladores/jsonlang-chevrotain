@@ -17,3 +17,6 @@ return 1;
 if (1) {;} elseif (1) {<x> = 1;} else {break;}
 for(x=1;1;1) {;}
 for(x=1;1;) {;}
+<v> = {
+  a: -2
+};

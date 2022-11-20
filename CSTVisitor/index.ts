@@ -6,6 +6,7 @@ import {
   BreakStatementCstChildren,
   CallStatementCstChildren,
   ContinueStatementCstChildren,
+  DictionaryCstChildren,
   DoUntilStatementCstChildren,
   EmptyStatementCstChildren,
   ExpressionCstChildren,
@@ -172,11 +173,23 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
     if (ctx.StringLiteral)
       return ctx.StringLiteral[0].image.replace(/^"(.*)"$/, "$1");
     if (ctx.array) return this.visit(ctx.array);
+    if (ctx.dictionary) return this.visit(ctx.dictionary);
   }
 
   array(ctx: ArrayCstChildren) {
     if (!ctx.expression) return [];
     return ctx.expression.map((expr) => this.visit(expr));
+  }
+
+  dictionary(ctx: DictionaryCstChildren) {
+    const retVal: any = { dict: [] };
+    if (!ctx.Identifier || !ctx.expression) return retVal;
+    for (let i = 0; i < ctx.Identifier.length; i++) {
+      const key = ctx.Identifier[i].image;
+      const value = this.visit(ctx.expression);
+      retVal.dict.push({ [key]: value });
+    }
+    return retVal;
   }
 }
 

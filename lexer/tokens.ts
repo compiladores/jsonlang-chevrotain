@@ -190,6 +190,8 @@ export const tokens = [
   RParen,
   LBracket,
   RBracket,
+  LAngleBracket,
+  RAngleBracket,
   Pipe,
   SemiColon,
   Colon,
