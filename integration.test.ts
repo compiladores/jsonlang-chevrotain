@@ -114,7 +114,24 @@ Deno.test("multiple if clauses", () => {
   ]);
 });
 
-Deno.test("while and do-until. var assignment", () => {
+Deno.test("iterator", () => {
+  const res = run(`
+    for (i = 1; 10; 2) {
+      <z> = i;
+    }
+  `);
+  assertEquals(res, [
+    {
+      iterator: "i",
+      from: 1,
+      to: 10,
+      step: 2,
+      do: [{ set: "z", value: "i" }],
+    },
+  ]);
+});
+
+Deno.test("while and do-until", () => {
   const res = run(`
     <x> = 1;
     <y> = -2;
@@ -151,7 +168,40 @@ Deno.test("while and do-until. var assignment", () => {
   ]);
 });
 
-//TODO: block
-//TODO: iterator
-//TODO: function and call
+Deno.test("block", () => {
+  const res = run(`
+    <x> = 1;
+    {
+      ;
+      {
+        <x> = 2;
+      }
+    }
+  `);
+  assertEquals(res, [
+    { set: "x", value: 1 },
+    ["noop", [{ set: "x", value: 2 }]],
+  ]);
+});
+
+Deno.test("function and call", () => {
+  const res = run(`
+    <test(a, b)> {
+      return a + b;
+    }
+    test->(2, x + -y);
+  `);
+  assertEquals(res, [
+    {
+      function: "test",
+      args: ["a", "b"],
+      block: [{ return: { binop: "+", argl: "a", argr: "b" } }],
+    },
+    {
+      call: "test",
+      args: [2, { binop: "+", argl: "x", argr: { unop: "-", arg: "y" } }],
+    },
+  ]);
+});
+
 //TODO: types/structs
