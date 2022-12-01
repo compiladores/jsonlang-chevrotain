@@ -31,6 +31,7 @@ export type StatementCstChildren = {
   continueStatement?: ContinueStatementCstNode[];
   returnStatement?: ReturnStatementCstNode[];
   callStatement?: CallStatementCstNode[];
+  typeStatement?: TypeStatementCstNode[];
 };
 
 export interface EmptyStatementCstNode extends CstNode {
@@ -50,6 +51,7 @@ export interface VariableStatementCstNode extends CstNode {
 export type VariableStatementCstChildren = {
   LAngleBracket: IToken[];
   Identifier: IToken[];
+  Colon?: IToken[];
   RAngleBracket: IToken[];
   Equals: IToken[];
   expression: ExpressionCstNode[];
@@ -129,6 +131,7 @@ export type FunctionStatementCstChildren = {
   LAngleBracket: IToken[];
   Identifier: IToken[];
   LParen: IToken[];
+  Colon?: IToken[];
   Comma?: IToken[];
   RParen: IToken[];
   RAngleBracket: IToken[];
@@ -165,6 +168,21 @@ export type ReturnStatementCstChildren = {
   expression?: ExpressionCstNode[];
   parenExpression?: ParenExpressionCstNode[];
   SemiColon: IToken[];
+};
+
+export interface TypeStatementCstNode extends CstNode {
+  name: "typeStatement";
+  children: TypeStatementCstChildren;
+}
+
+export type TypeStatementCstChildren = {
+  LAngleBracket: IToken[];
+  Identifier: IToken[];
+  RAngleBracket: IToken[];
+  LCurly: IToken[];
+  Colon: IToken[];
+  SemiColon: IToken[];
+  RCurly: IToken[];
 };
 
 export interface CallStatementCstNode extends CstNode {
@@ -218,10 +236,59 @@ export interface ExpressionCstNode extends CstNode {
 }
 
 export type ExpressionCstChildren = {
+  equalty: EqualtyCstNode[];
+  LogicalBinop?: IToken[];
+};
+
+export interface EqualtyCstNode extends CstNode {
+  name: "equalty";
+  children: EqualtyCstChildren;
+}
+
+export type EqualtyCstChildren = {
+  comparison: ComparisonCstNode[];
+  EqualtyBinop?: IToken[];
+};
+
+export interface ComparisonCstNode extends CstNode {
+  name: "comparison";
+  children: ComparisonCstChildren;
+}
+
+export type ComparisonCstChildren = {
+  term: TermCstNode[];
+  ComparisonBinop?: IToken[];
+};
+
+export interface TermCstNode extends CstNode {
+  name: "term";
+  children: TermCstChildren;
+}
+
+export type TermCstChildren = {
+  factor: FactorCstNode[];
+  TermBinop?: IToken[];
+};
+
+export interface FactorCstNode extends CstNode {
+  name: "factor";
+  children: FactorCstChildren;
+}
+
+export type FactorCstChildren = {
+  unary: UnaryCstNode[];
+  FactorBinop?: IToken[];
+};
+
+export interface UnaryCstNode extends CstNode {
+  name: "unary";
+  children: UnaryCstChildren;
+}
+
+export type UnaryCstChildren = {
   simpleExpression?: SimpleExpressionCstNode[];
   Unop?: IToken[];
-  expression?: ExpressionCstNode[];
-  Binop?: IToken[];
+  unary?: UnaryCstNode[];
 };
 
 export interface SimpleExpressionCstNode extends CstNode {
@@ -280,11 +347,17 @@ export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   breakStatement(children: BreakStatementCstChildren, param?: IN): OUT;
   continueStatement(children: ContinueStatementCstChildren, param?: IN): OUT;
   returnStatement(children: ReturnStatementCstChildren, param?: IN): OUT;
+  typeStatement(children: TypeStatementCstChildren, param?: IN): OUT;
   callStatement(children: CallStatementCstChildren, param?: IN): OUT;
   callExpression(children: CallExpressionCstChildren, param?: IN): OUT;
   funcargs(children: FuncargsCstChildren, param?: IN): OUT;
   parenExpression(children: ParenExpressionCstChildren, param?: IN): OUT;
   expression(children: ExpressionCstChildren, param?: IN): OUT;
+  equalty(children: EqualtyCstChildren, param?: IN): OUT;
+  comparison(children: ComparisonCstChildren, param?: IN): OUT;
+  term(children: TermCstChildren, param?: IN): OUT;
+  factor(children: FactorCstChildren, param?: IN): OUT;
+  unary(children: UnaryCstChildren, param?: IN): OUT;
   simpleExpression(children: SimpleExpressionCstChildren, param?: IN): OUT;
   array(children: ArrayCstChildren, param?: IN): OUT;
   dictionary(children: DictionaryCstChildren, param?: IN): OUT;

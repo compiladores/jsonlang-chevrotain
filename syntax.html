@@ -166,6 +166,16 @@
                 "idx": 0
               }
             ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "typeStatement",
+                "idx": 0
+              }
+            ]
           }
         ]
       }
@@ -203,6 +213,26 @@
         "label": "Identifier",
         "idx": 0,
         "pattern": "[a-zA-Z]\\w*"
+      },
+      {
+        "type": "Option",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Terminal",
+            "name": "Colon",
+            "label": "Colon",
+            "idx": 0,
+            "pattern": "\\:"
+          },
+          {
+            "type": "Terminal",
+            "name": "Identifier",
+            "label": "Identifier",
+            "idx": 2,
+            "pattern": "[a-zA-Z]\\w*"
+          }
+        ]
       },
       {
         "type": "Terminal",
@@ -510,6 +540,26 @@
             "label": "Identifier",
             "idx": 2,
             "pattern": "[a-zA-Z]\\w*"
+          },
+          {
+            "type": "Option",
+            "idx": 0,
+            "definition": [
+              {
+                "type": "Terminal",
+                "name": "Colon",
+                "label": "Colon",
+                "idx": 0,
+                "pattern": "\\:"
+              },
+              {
+                "type": "Terminal",
+                "name": "Identifier",
+                "label": "Identifier",
+                "idx": 3,
+                "pattern": "[a-zA-Z]\\w*"
+              }
+            ]
           }
         ]
       },
@@ -519,6 +569,26 @@
         "label": "RParen",
         "idx": 0,
         "pattern": "\\)"
+      },
+      {
+        "type": "Option",
+        "idx": 2,
+        "definition": [
+          {
+            "type": "Terminal",
+            "name": "Colon",
+            "label": "Colon",
+            "idx": 2,
+            "pattern": "\\:"
+          },
+          {
+            "type": "Terminal",
+            "name": "Identifier",
+            "label": "Identifier",
+            "idx": 4,
+            "pattern": "[a-zA-Z]\\w*"
+          }
+        ]
       },
       {
         "type": "Terminal",
@@ -626,6 +696,96 @@
         "label": "SemiColon",
         "idx": 0,
         "pattern": "\\;"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "typeStatement",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LAngleBracket",
+        "label": "LAngleBracket",
+        "idx": 0,
+        "pattern": "\\<"
+      },
+      {
+        "type": "Terminal",
+        "name": "LAngleBracket",
+        "label": "LAngleBracket",
+        "idx": 2,
+        "pattern": "\\<"
+      },
+      {
+        "type": "Terminal",
+        "name": "Identifier",
+        "label": "Identifier",
+        "idx": 0,
+        "pattern": "[a-zA-Z]\\w*"
+      },
+      {
+        "type": "Terminal",
+        "name": "RAngleBracket",
+        "label": "RAngleBracket",
+        "idx": 0,
+        "pattern": "\\>"
+      },
+      {
+        "type": "Terminal",
+        "name": "RAngleBracket",
+        "label": "RAngleBracket",
+        "idx": 2,
+        "pattern": "\\>"
+      },
+      {
+        "type": "Terminal",
+        "name": "LCurly",
+        "label": "LCurly",
+        "idx": 0,
+        "pattern": "\\{"
+      },
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Terminal",
+            "name": "Identifier",
+            "label": "Identifier",
+            "idx": 2,
+            "pattern": "[a-zA-Z]\\w*"
+          },
+          {
+            "type": "Terminal",
+            "name": "Colon",
+            "label": "Colon",
+            "idx": 0,
+            "pattern": "\\:"
+          },
+          {
+            "type": "Terminal",
+            "name": "Identifier",
+            "label": "Identifier",
+            "idx": 3,
+            "pattern": "[a-zA-Z]\\w*"
+          },
+          {
+            "type": "Terminal",
+            "name": "SemiColon",
+            "label": "SemiColon",
+            "idx": 0,
+            "pattern": "\\;"
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "RCurly",
+        "label": "RCurly",
+        "idx": 0,
+        "pattern": "\\}"
       }
     ]
   },
@@ -752,6 +912,156 @@
     "orgText": "",
     "definition": [
       {
+        "type": "NonTerminal",
+        "name": "equalty",
+        "idx": 0
+      },
+      {
+        "type": "Repetition",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Terminal",
+            "name": "LogicalBinop",
+            "label": "LogicalBinop",
+            "idx": 0,
+            "pattern": "NOT_APPLICABLE"
+          },
+          {
+            "type": "NonTerminal",
+            "name": "equalty",
+            "idx": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "equalty",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "NonTerminal",
+        "name": "comparison",
+        "idx": 0
+      },
+      {
+        "type": "Repetition",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Terminal",
+            "name": "EqualtyBinop",
+            "label": "EqualtyBinop",
+            "idx": 0,
+            "pattern": "NOT_APPLICABLE"
+          },
+          {
+            "type": "NonTerminal",
+            "name": "comparison",
+            "idx": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "comparison",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "NonTerminal",
+        "name": "term",
+        "idx": 0
+      },
+      {
+        "type": "Repetition",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Terminal",
+            "name": "ComparisonBinop",
+            "label": "ComparisonBinop",
+            "idx": 0,
+            "pattern": "NOT_APPLICABLE"
+          },
+          {
+            "type": "NonTerminal",
+            "name": "term",
+            "idx": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "term",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "NonTerminal",
+        "name": "factor",
+        "idx": 0
+      },
+      {
+        "type": "Repetition",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Terminal",
+            "name": "TermBinop",
+            "label": "TermBinop",
+            "idx": 0,
+            "pattern": "NOT_APPLICABLE"
+          },
+          {
+            "type": "NonTerminal",
+            "name": "factor",
+            "idx": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "factor",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "NonTerminal",
+        "name": "unary",
+        "idx": 0
+      },
+      {
+        "type": "Repetition",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Terminal",
+            "name": "FactorBinop",
+            "label": "FactorBinop",
+            "idx": 0,
+            "pattern": "NOT_APPLICABLE"
+          },
+          {
+            "type": "NonTerminal",
+            "name": "unary",
+            "idx": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "unary",
+    "orgText": "",
+    "definition": [
+      {
         "type": "Alternation",
         "idx": 0,
         "definition": [
@@ -777,28 +1087,10 @@
               },
               {
                 "type": "NonTerminal",
-                "name": "expression",
+                "name": "unary",
                 "idx": 0
               }
             ]
-          }
-        ]
-      },
-      {
-        "type": "Repetition",
-        "idx": 0,
-        "definition": [
-          {
-            "type": "Terminal",
-            "name": "Binop",
-            "label": "Binop",
-            "idx": 0,
-            "pattern": "NOT_APPLICABLE"
-          },
-          {
-            "type": "NonTerminal",
-            "name": "expression",
-            "idx": 2
           }
         ]
       }

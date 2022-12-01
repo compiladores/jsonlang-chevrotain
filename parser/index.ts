@@ -1,5 +1,12 @@
 import { CstParser, Rule } from "https://esm.sh/chevrotain@10.4.1";
-import { Binop, Unop } from "../lexer/categories.ts";
+import {
+  ComparisonBinop,
+  EqualtyBinop,
+  FactorBinop,
+  LogicalBinop,
+  TermBinop,
+  Unop,
+} from "../lexer/categories.ts";
 import {
   Break,
   Colon,
@@ -32,6 +39,13 @@ import {
   While,
 } from "../lexer/tokens.ts";
 
+// equality → comparison ( ( "!=" | "==" ) comparison )* ;
+// comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+// term → factor ( ( "-" | "+" ) factor )* ;
+// factor → unary ( ( "/" | "*" ) unary )* ;
+// unary→ ( "!" | "-" ) unary;
+// primary -> simpleexpr
+
 class CompilangParser extends CstParser {
   constructor() {
     super(tokens);
@@ -58,6 +72,7 @@ class CompilangParser extends CstParser {
       { ALT: () => this.SUBRULE(this.continueStatement) },
       { ALT: () => this.SUBRULE(this.returnStatement) },
       { ALT: () => this.SUBRULE(this.callStatement) },
+      { ALT: () => this.SUBRULE(this.typeStatement) },
     ]);
   });
 
@@ -68,6 +83,10 @@ class CompilangParser extends CstParser {
   variableStatement = this.RULE("variableStatement", () => {
     this.CONSUME(LAngleBracket);
     this.CONSUME(Identifier);
+    this.OPTION(() => {
+      this.CONSUME(Colon);
+      this.CONSUME2(Identifier);
+    });
     this.CONSUME(RAngleBracket);
     this.CONSUME(Equals);
     this.SUBRULE(this.expression);
@@ -131,9 +150,19 @@ class CompilangParser extends CstParser {
     this.CONSUME(LParen);
     this.MANY_SEP({
       SEP: Comma,
-      DEF: () => this.CONSUME2(Identifier),
+      DEF: () => {
+        this.CONSUME2(Identifier);
+        this.OPTION(() => {
+          this.CONSUME(Colon);
+          this.CONSUME3(Identifier);
+        });
+      },
     });
     this.CONSUME(RParen);
+    this.OPTION2(() => {
+      this.CONSUME2(Colon);
+      this.CONSUME4(Identifier);
+    });
     this.CONSUME(RAngleBracket);
     this.SUBRULE(this.blockStatement);
   });
@@ -157,6 +186,22 @@ class CompilangParser extends CstParser {
       ]);
     });
     this.CONSUME(SemiColon);
+  });
+
+  typeStatement = this.RULE("typeStatement", () => {
+    this.CONSUME(LAngleBracket);
+    this.CONSUME2(LAngleBracket);
+    this.CONSUME(Identifier);
+    this.CONSUME(RAngleBracket);
+    this.CONSUME2(RAngleBracket);
+    this.CONSUME(LCurly);
+    this.AT_LEAST_ONE(() => {
+      this.CONSUME2(Identifier);
+      this.CONSUME(Colon);
+      this.CONSUME3(Identifier);
+      this.CONSUME(SemiColon);
+    });
+    this.CONSUME(RCurly);
   });
 
   callStatement = this.RULE("callStatement", () => {
@@ -187,19 +232,55 @@ class CompilangParser extends CstParser {
   });
 
   expression = this.RULE("expression", () => {
+    this.SUBRULE(this.equalty);
+    this.MANY(() => {
+      this.CONSUME(LogicalBinop);
+      this.SUBRULE2(this.equalty);
+    });
+  });
+
+  equalty = this.RULE("equalty", () => {
+    this.SUBRULE(this.comparison);
+    this.MANY(() => {
+      this.CONSUME(EqualtyBinop);
+      this.SUBRULE2(this.comparison);
+    });
+  });
+
+  comparison = this.RULE("comparison", () => {
+    this.SUBRULE(this.term);
+    this.MANY(() => {
+      this.CONSUME(ComparisonBinop);
+      this.SUBRULE2(this.term);
+    });
+  });
+
+  term = this.RULE("term", () => {
+    this.SUBRULE(this.factor);
+    this.MANY(() => {
+      this.CONSUME(TermBinop);
+      this.SUBRULE2(this.factor);
+    });
+  });
+
+  factor = this.RULE("factor", () => {
+    this.SUBRULE(this.unary);
+    this.MANY(() => {
+      this.CONSUME(FactorBinop);
+      this.SUBRULE2(this.unary);
+    });
+  });
+
+  unary = this.RULE("unary", () => {
     this.OR([
       { ALT: () => this.SUBRULE(this.simpleExpression) },
       {
         ALT: () => {
           this.CONSUME(Unop);
-          this.SUBRULE(this.expression);
+          this.SUBRULE(this.unary);
         },
       },
     ]);
-    this.MANY(() => {
-      this.CONSUME(Binop);
-      this.SUBRULE2(this.expression);
-    });
   });
 
   simpleExpression = this.RULE("simpleExpression", () => {
@@ -212,7 +293,7 @@ class CompilangParser extends CstParser {
       { ALT: () => this.CONSUME(Identifier) },
       { ALT: () => this.CONSUME(True) },
       { ALT: () => this.CONSUME(False) },
-      //TODO: paren expression -> (1 + (3 - (x)))
+      // { ALT: () => this.SUBRULE(this.parenExpression) },
     ]);
   });
 

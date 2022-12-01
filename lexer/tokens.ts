@@ -1,5 +1,12 @@
 import { createToken, Lexer } from "https://esm.sh/chevrotain@10.4.1";
-import { Binop, Unop } from "./categories.ts";
+import {
+  ComparisonBinop,
+  EqualtyBinop,
+  FactorBinop,
+  LogicalBinop,
+  TermBinop,
+  Unop,
+} from "./categories.ts";
 
 export const Identifier = createToken({
   name: "Identifier",
@@ -64,13 +71,13 @@ export const And = createToken({
   name: "And",
   pattern: /and/,
   longer_alt: Identifier,
-  categories: [Binop],
+  categories: [LogicalBinop],
 });
 export const Or = createToken({
   name: "Or",
   pattern: /or/,
   longer_alt: Identifier,
-  categories: [Binop],
+  categories: [LogicalBinop],
 });
 export const Not = createToken({
   name: "Not",
@@ -82,37 +89,37 @@ export const Eq = createToken({
   name: "Eq",
   pattern: /eq/,
   longer_alt: Identifier,
-  categories: [Binop],
+  categories: [EqualtyBinop],
 });
 export const Ne = createToken({
   name: "Ne",
   pattern: /ne/,
   longer_alt: Identifier,
-  categories: [Binop],
+  categories: [EqualtyBinop],
 });
 export const Gt = createToken({
   name: "Gt",
   pattern: /gt/,
   longer_alt: Identifier,
-  categories: [Binop],
+  categories: [ComparisonBinop],
 });
 export const Gte = createToken({
   name: "Gte",
   pattern: /gte/,
   longer_alt: Identifier,
-  categories: [Binop],
+  categories: [ComparisonBinop],
 });
 export const Lt = createToken({
   name: "Lt",
   pattern: /lt/,
   longer_alt: Identifier,
-  categories: [Binop],
+  categories: [ComparisonBinop],
 });
 export const Lte = createToken({
   name: "Lte",
   pattern: /lte/,
   longer_alt: Identifier,
-  categories: [Binop],
+  categories: [ComparisonBinop],
 });
 export const LCurly = createToken({ name: "LCurly", pattern: /\{/ });
 export const RCurly = createToken({ name: "RCurly", pattern: /\}/ });
@@ -138,22 +145,22 @@ export const False = createToken({ name: "False", pattern: /false/ });
 export const Plus = createToken({
   name: "Plus",
   pattern: /\+/,
-  categories: [Binop],
+  categories: [TermBinop],
 });
 export const Minus = createToken({
   name: "Minus",
   pattern: /\-/,
-  categories: [Unop, Binop],
+  categories: [Unop, TermBinop],
 });
 export const Times = createToken({
   name: "Times",
   pattern: /\*/,
-  categories: [Binop],
+  categories: [FactorBinop],
 });
 export const Division = createToken({
   name: "Division",
   pattern: /\//,
-  categories: [Binop],
+  categories: [FactorBinop],
 });
 export const WhiteSpace = createToken({
   name: "WhiteSpace",
@@ -163,7 +170,11 @@ export const WhiteSpace = createToken({
 
 export const tokens = [
   Unop,
-  Binop,
+  LogicalBinop,
+  EqualtyBinop,
+  ComparisonBinop,
+  TermBinop,
+  FactorBinop,
   If,
   Elseif,
   Else,

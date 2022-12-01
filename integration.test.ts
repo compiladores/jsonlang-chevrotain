@@ -30,7 +30,6 @@ Deno.test("return and multiple expressions", () => {
   return { name: "Test", age: 30, test: [1, 2, 3] };
   return sum->(2,3);
 `);
-  console.log(JSON.stringify(res));
   assertEquals(res, [
     { return: "asd" },
     { return: 1 },
@@ -52,16 +51,12 @@ Deno.test("return and multiple expressions", () => {
     {
       return: {
         binop: "+",
-        argl: 1,
-        argr: {
+        argl: {
           binop: "+",
-          argl: 2,
-          argr: {
-            binop: "+",
-            argl: 3,
-            argr: { binop: "+", argl: 4, argr: { unop: "-", arg: 5 } },
-          },
+          argl: { binop: "+", argl: { binop: "+", argl: 1, argr: 2 }, argr: 3 },
+          argr: 4,
         },
+        argr: { unop: "-", arg: 5 },
       },
     },
     {
@@ -75,6 +70,25 @@ Deno.test("return and multiple expressions", () => {
     },
     { return: { dict: [{ name: "Test" }, { age: 30 }, { test: [1, 2, 3] }] } },
     { return: { call: "sum", args: [2, 3] } },
+  ]);
+});
+
+Deno.test("precedence", () => {
+  const res = run(`
+    return 1 + 3 * 5 eq x lt y and true;
+  `);
+  assertEquals(res, [
+    {
+      return: {
+        binop: "and",
+        argl: {
+          binop: "eq",
+          argl: { binop: "+", argl: 1, argr: { binop: "*", argl: 3, argr: 5 } },
+          argr: { binop: "lt", argl: "x", argr: "y" },
+        },
+        argr: true,
+      },
+    },
   ]);
 });
 
@@ -148,13 +162,13 @@ Deno.test("while and do-until", () => {
     { set: "y", value: { unop: "-", arg: 2 } },
     {
       while: {
-        binop: "+",
-        argl: 5,
-        argr: {
+        binop: "ne",
+        argl: {
           binop: "+",
-          argl: "y",
-          argr: { binop: "ne", argl: "x", argr: 75 },
+          argl: { binop: "+", argl: 5, argr: "y" },
+          argr: "x",
         },
+        argr: 75,
       },
       do: [
         { set: "x", value: { binop: "*", argl: "x", argr: 2 } },
@@ -204,4 +218,53 @@ Deno.test("function and call", () => {
   ]);
 });
 
-//TODO: types/structs
+Deno.test("variables with regular types", () => {
+  const res = run(`
+    <x: number> = 1;
+    <y: string> = "asd";
+    <z: array> = [];
+  `);
+  assertEquals(res, [
+    { set: "x", value: 1 },
+    { set: "y", value: "asd" },
+    { set: "z", value: [] },
+  ]);
+});
+
+Deno.test("function and call with types", () => {
+  const res = run(`
+    <test(a: number, b: number): number> {
+      return a + b;
+    }
+    test->(2, 10 + -1);
+  `);
+  assertEquals(res, [
+    {
+      function: "test",
+      args: ["a", "b"],
+      block: [{ return: { binop: "+", argl: "a", argr: "b" } }],
+    },
+    {
+      call: "test",
+      args: [2, { binop: "+", argl: 10, argr: { unop: "-", arg: 1 } }],
+    },
+  ]);
+});
+
+Deno.test("custom types", () => {
+  const res = run(`
+    <<Person>> {
+      name: string;
+      age: number;
+    }
+    <w: Person> = {
+      name: "test",
+      age: 30
+    };
+    <make_person(n: string, a: number): Person> {
+      return { name: n, age: a };
+    }
+    <person: Person> = make_person->("Other", 45);
+  `);
+  assertEquals(res, []);
+});

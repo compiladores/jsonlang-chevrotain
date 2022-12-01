@@ -6,11 +6,14 @@ import {
   BreakStatementCstChildren,
   CallExpressionCstChildren,
   CallStatementCstChildren,
+  ComparisonCstChildren,
   ContinueStatementCstChildren,
   DictionaryCstChildren,
   DoUntilStatementCstChildren,
   EmptyStatementCstChildren,
+  EqualtyCstChildren,
   ExpressionCstChildren,
+  FactorCstChildren,
   ForStatementCstChildren,
   FuncargsCstChildren,
   FunctionStatementCstChildren,
@@ -19,7 +22,9 @@ import {
   ReturnStatementCstChildren,
   SimpleExpressionCstChildren,
   StatementCstChildren,
+  TermCstChildren,
   TopRuleCstChildren,
+  UnaryCstChildren,
   VariableStatementCstChildren,
   WhileStatementCstChildren,
 } from "./compilang_cst.d.ts";
@@ -138,6 +143,7 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
   }
 
   breakStatement(_: BreakStatementCstChildren) {
+    console.log("asd");
     return "break";
   }
 
@@ -155,19 +161,80 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
   }
 
   expression(ctx: ExpressionCstChildren) {
-    let retVal = null;
-    if (ctx.Unop && ctx.expression) {
-      retVal = { unop: ctx.Unop[0].image, arg: this.visit(ctx.expression) };
+    const equalties = ctx.equalty.map((eq) => this.visit(eq));
+    if (ctx.LogicalBinop) {
+      const binops = ctx.LogicalBinop;
+      return equalties.reduce((a, b, index) => ({
+        binop: binops[index - 1].image,
+        argl: a,
+        argr: b,
+      }));
+    } else {
+      return equalties[0];
     }
-    if (ctx.simpleExpression) retVal = this.visit(ctx.simpleExpression);
-    if (ctx.Binop && ctx.expression) {
-      retVal = {
-        binop: ctx.Binop[0].image,
-        argl: retVal,
-        argr: this.visit(ctx.expression),
-      };
+  }
+
+  equalty(ctx: EqualtyCstChildren) {
+    const comparisons = ctx.comparison.map((cmp) => this.visit(cmp));
+    if (ctx.EqualtyBinop) {
+      const binops = ctx.EqualtyBinop;
+      return comparisons.reduce((a, b, index) => ({
+        binop: binops[index - 1].image,
+        argl: a,
+        argr: b,
+      }));
+    } else {
+      return comparisons[0];
     }
-    return retVal;
+  }
+
+  comparison(ctx: ComparisonCstChildren) {
+    const terms = ctx.term.map((term) => this.visit(term));
+    if (ctx.ComparisonBinop) {
+      const binops = ctx.ComparisonBinop;
+      return terms.reduce((a, b, index) => ({
+        binop: binops[index - 1].image,
+        argl: a,
+        argr: b,
+      }));
+    } else {
+      return terms[0];
+    }
+  }
+
+  term(ctx: TermCstChildren) {
+    const factors = ctx.factor.map((fct) => this.visit(fct));
+    if (ctx.TermBinop) {
+      const binops = ctx.TermBinop;
+      return factors.reduce((a, b, index) => ({
+        binop: binops[index - 1].image,
+        argl: a,
+        argr: b,
+      }));
+    } else {
+      return factors[0];
+    }
+  }
+
+  factor(ctx: FactorCstChildren) {
+    const unaries = ctx.unary.map((un) => this.visit(un));
+    if (ctx.FactorBinop) {
+      const binops = ctx.FactorBinop;
+      return unaries.reduce((a, b, index) => ({
+        binop: binops[index - 1].image,
+        argl: a,
+        argr: b,
+      }));
+    } else {
+      return unaries[0];
+    }
+  }
+
+  unary(ctx: UnaryCstChildren) {
+    if (ctx.simpleExpression) return this.visit(ctx.simpleExpression);
+    if (ctx.Unop && ctx.unary) {
+      return { unop: ctx.Unop[0].image, arg: this.visit(ctx.unary) };
+    }
   }
 
   simpleExpression(ctx: SimpleExpressionCstChildren) {
