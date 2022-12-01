@@ -1,110 +1,64 @@
-// deno-lint-ignore-file no-explicit-any
 import {
+  BlockStatementCstChildren,
+  ComparisonCstChildren,
+  EqualtyCstChildren,
+  ExpressionCstChildren,
+  FactorCstChildren,
+  ForStatementCstChildren,
+  ParenExpressionCstChildren,
+  SimpleExpressionCstChildren,
   StatementCstChildren,
+  TermCstChildren,
   TopRuleCstChildren,
+  UnaryCstChildren,
   VariableStatementCstChildren,
 } from "../CSTVisitor/compilang_cst.d.ts";
 import { parser } from "../parser/index.ts";
-
-interface TypedVar {
-  value: string;
-  type: string;
-}
+import { TypedVariablesChecker } from "./typedVariablesChecker.ts";
+import { IncompatibleTypesError } from "./typeError.ts";
 
 const BaseCSTVisitor = parser.getBaseCstVisitorConstructorWithDefaults();
 
-class TypeCheckerVisitor extends BaseCSTVisitor {
-  private typedVars: TypedVar[];
-  private definedTypes: string[];
+//TODO: definir tipos mediante lo nuevo del parser
+//TODO: arrays
+//TODO: diccionarios
+//TODO: funciones y calls
+//TODO: any en expressions?
 
+export class TypeCheckerVisitor extends BaseCSTVisitor {
+  private typedVariables: TypedVariablesChecker;
   constructor() {
     super();
-    this.typedVars = [];
-    //TODO: ver como defino tipos custom raros
-    this.definedTypes = [
-      "string",
-      "number",
-      "boolean",
-      "any",
-      "object",
-      "array",
-    ];
+    this.typedVariables = new TypedVariablesChecker();
     this.validateVisitor();
   }
 
-  private getType(variable: any): string {
-    if (Array.isArray(variable)) return "array";
-    else if (typeof variable === "object") return "object";
-    else if (typeof variable === "number") return "number";
-    else if (typeof variable === "string") return "string";
-    else if (typeof variable === "boolean") return "boolean";
-    return "any";
-  }
-
   topRule(ctx: TopRuleCstChildren) {
-    //TODO: rodear con try catch con error custom
     if (!ctx.statement) return;
-    for (const node of ctx.statement) {
-      this.visit(node);
+    try {
+      for (const node of ctx.statement) {
+        this.visit(node);
+      }
+    } catch (e) {
+      throw e;
     }
   }
 
   statement(ctx: StatementCstChildren) {
-    if (ctx.emptyStatement) this.visit(ctx.emptyStatement);
     if (ctx.variableStatement) this.visit(ctx.variableStatement);
-    if (ctx.breakStatement) this.visit(ctx.breakStatement);
-    if (ctx.continueStatement) this.visit(ctx.continueStatement);
     if (ctx.blockStatement) this.visit(ctx.blockStatement);
-    if (ctx.ifStatement) this.visit(ctx.ifStatement);
-    if (ctx.whileStatement) this.visit(ctx.whileStatement);
-    if (ctx.doUntilStatement) this.visit(ctx.doUntilStatement);
     if (ctx.forStatement) this.visit(ctx.forStatement);
     if (ctx.callStatement) this.visit(ctx.callStatement);
     if (ctx.returnStatement) this.visit(ctx.returnStatement);
     if (ctx.functionStatement) this.visit(ctx.functionStatement);
   }
 
-  // ifStatement(ctx: IfStatementCstChildren) {
-  //   const res: any = { if: [] };
-  //   const statements = ctx.statement.map((stmt) => this.visit(stmt));
-  //   const expressions = ctx.parenExpression.map((expr) => this.visit(expr));
-  //   for (let i = 0; i < expressions.length; i++) {
-  //     res.if.push({
-  //       cond: expressions[i],
-  //       then: statements[i],
-  //     });
-  //   }
-  //   if (ctx.Else) {
-  //     res.else = statements[statements.length - 1];
-  //   }
-  //   return res;
-  // }
-
-  // whileStatement(ctx: WhileStatementCstChildren) {
-  //   return {
-  //     while: this.visit(ctx.parenExpression),
-  //     do: this.visit(ctx.statement),
-  //   };
-  // }
-
-  // doUntilStatement(ctx: DoUntilStatementCstChildren) {
-  //   return {
-  //     do: this.visit(ctx.statement),
-  //     until: this.visit(ctx.parenExpression),
-  //   };
-  // }
-
-  // forStatement(ctx: ForStatementCstChildren) {
-  //   const expressions = ctx.expression.map((expr) => this.visit(expr));
-  //   const res: any = {
-  //     iterator: ctx.Identifier[0].image,
-  //     from: expressions[0],
-  //     to: expressions[1],
-  //     do: this.visit(ctx.blockStatement),
-  //   };
-  //   if (expressions[2]) res.step = expressions[2];
-  //   return res;
-  // }
+  forStatement(ctx: ForStatementCstChildren) {
+    this.typedVariables.add({
+      value: ctx.Identifier[0].image,
+      type: "number",
+    });
+  }
 
   // callStatement(ctx: CallStatementCstChildren) {
   //   return this.visit(ctx.callExpression);
@@ -119,14 +73,18 @@ class TypeCheckerVisitor extends BaseCSTVisitor {
   // }
 
   variableStatement(ctx: VariableStatementCstChildren) {
-    const variable = {
-      value: ctx.Identifier[0].image,
-      type: this.getType(this.visit(ctx.expression)),
-    };
-    //TODO: comparar con el tipo explicito.
-    // Si da igual, o no tiene tipo explicito hacer este push
-    this.typedVars.push(variable);
-    //TODO: sino, tirar error
+    const expressionType = this.visit(ctx.expression);
+    if (ctx.Colon) {
+      const explicitType = ctx.Identifier[1].image;
+      if (!this.typedVariables.areCompatible(expressionType, explicitType)) {
+        throw new IncompatibleTypesError(expressionType, explicitType);
+      }
+    } else {
+      this.typedVariables.add({
+        value: ctx.Identifier[0].image,
+        type: expressionType,
+      });
+    }
   }
 
   // returnStatement(ctx: ReturnStatementCstChildren) {
@@ -144,58 +102,80 @@ class TypeCheckerVisitor extends BaseCSTVisitor {
   //   };
   // }
 
-  // blockStatement(ctx: BlockStatementCstChildren) {
-  //   return this.visit(ctx.topRule);
-  // }
-
-  // emptyStatement(_: EmptyStatementCstChildren) {
-  //   return "noop";
-  // }
-
-  // breakStatement(_: BreakStatementCstChildren) {
-  //   return "break";
-  // }
-
-  // continueStatement(_: ContinueStatementCstChildren) {
-  //   return "continue";
-  // }
+  blockStatement(ctx: BlockStatementCstChildren) {
+    return this.visit(ctx.topRule);
+  }
 
   // funcargs(ctx: FuncargsCstChildren) {
   //   if (!ctx.expression) return [];
   //   return ctx.expression.map((expr) => this.visit(expr));
   // }
 
-  // parenExpression(ctx: ParenExpressionCstChildren) {
-  //   return this.visit(ctx.expression);
-  // }
+  parenExpression(ctx: ParenExpressionCstChildren) {
+    return this.visit(ctx.expression);
+  }
 
-  // expression(ctx: ExpressionCstChildren) {
-  //   let retVal = null;
-  //   if (ctx.Unop && ctx.expression) {
-  //     retVal = { unop: ctx.Unop[0].image, arg: this.visit(ctx.expression) };
-  //   }
-  //   if (ctx.simpleExpression) retVal = this.visit(ctx.simpleExpression);
-  //   if (ctx.Binop && ctx.expression) {
-  //     retVal = {
-  //       binop: ctx.Binop[0].image,
-  //       argl: retVal,
-  //       argr: this.visit(ctx.expression),
-  //     };
-  //   }
-  //   return retVal;
-  // }
+  expression(ctx: ExpressionCstChildren) {
+    if (ctx.LogicalBinop) return "boolean";
+    return this.visit(ctx.equalty[0]);
+  }
 
-  // simpleExpression(ctx: SimpleExpressionCstChildren) {
-  //   if (ctx.Integer) return +ctx.Integer[0].image;
-  //   if (ctx.False) return false;
-  //   if (ctx.True) return true;
-  //   if (ctx.Identifier) return ctx.Identifier[0].image;
-  //   if (ctx.StringLiteral)
-  //     return ctx.StringLiteral[0].image.replace(/^"(.*)"$/, "$1");
-  //   if (ctx.array) return this.visit(ctx.array);
-  //   if (ctx.dictionary) return this.visit(ctx.dictionary);
-  //   if (ctx.callExpression) return this.visit(ctx.callExpression);
-  // }
+  equalty(ctx: EqualtyCstChildren) {
+    if (ctx.EqualtyBinop) return "boolean";
+    return this.visit(ctx.comparison[0]);
+  }
+
+  comparison(ctx: ComparisonCstChildren) {
+    if (ctx.ComparisonBinop) return "boolean";
+    return this.visit(ctx.term[0]);
+  }
+
+  term(ctx: TermCstChildren) {
+    if (ctx.TermBinop) {
+      const operators = ctx.TermBinop.map((op) => op.image);
+      const allPlusOperators = operators.every((op) => op === "+");
+      const factorTypes = ctx.factor.map((f) => this.visit(f));
+      const allStrings = factorTypes.every((f) => f === "string");
+      const allNumbers = factorTypes.every((f) => f === "number");
+      if (allPlusOperators && allStrings) return "string";
+      if (allNumbers) return "number";
+      throw new Error("Invalid expression");
+    }
+    return this.visit(ctx.factor[0]);
+  }
+
+  factor(ctx: FactorCstChildren) {
+    if (ctx.FactorBinop) {
+      const unaryTypes = ctx.unary.map((u) => this.visit(u));
+      const allNumbers = unaryTypes.every((f) => f === "number");
+      if (allNumbers) return "number";
+      throw new Error("Invalid expression");
+    }
+    return this.visit(ctx.unary[0]);
+  }
+
+  unary(ctx: UnaryCstChildren) {
+    if (ctx.Unop && ctx.unary) {
+      const unop = ctx.Unop[0].image;
+      const unary = this.visit(ctx.unary[0]);
+      if (unary === "number" && unop === "-") return "number";
+      if (unary === "number" && unop === "not") return "boolean";
+      if (unary === "boolean" && unop === "not") return "boolean";
+      throw new Error("Invalid expression");
+    }
+    if (ctx.simpleExpression) return this.visit(ctx.simpleExpression);
+  }
+
+  simpleExpression(ctx: SimpleExpressionCstChildren) {
+    if (ctx.Integer) return "number";
+    if (ctx.False || ctx.True) return "boolean";
+    if (ctx.Identifier)
+      return this.typedVariables.getTypeForVariable(ctx.Identifier[0].image);
+    if (ctx.StringLiteral) return "string";
+    if (ctx.array) return "array";
+    if (ctx.dictionary) return "object";
+    // if (ctx.callExpression) return this.visit(ctx.callExpression);
+  }
 
   // array(ctx: ArrayCstChildren) {
   //   if (!ctx.expression) return [];
@@ -213,5 +193,3 @@ class TypeCheckerVisitor extends BaseCSTVisitor {
   //   return retVal;
   // }
 }
-
-export const typeCheckerVisitor = new TypeCheckerVisitor();

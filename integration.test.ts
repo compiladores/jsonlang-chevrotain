@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.155.0/testing/asserts.ts";
 import { run } from "./main.ts";
+import { IncompatibleTypesError } from "./typeChecker/typeError.ts";
 
 Deno.test("empty", () => {
   const res = run(`;`);
@@ -16,6 +17,7 @@ Deno.test("break and continue", () => {
 
 Deno.test("return and multiple expressions", () => {
   const res = run(`
+  <x> = 1;
   return "asd";
   return 1;
   return true;
@@ -31,6 +33,7 @@ Deno.test("return and multiple expressions", () => {
   return sum->(2,3);
 `);
   assertEquals(res, [
+    { set: "x", value: 1 },
     { return: "asd" },
     { return: 1 },
     { return: true },
@@ -109,7 +112,7 @@ Deno.test("if and else", () => {
 
 Deno.test("multiple if clauses", () => {
   const res = run(`
-    if (x eq 90) {
+    if (7 + 8 eq 90) {
       ;
     } elseif (false) {
       break;
@@ -120,7 +123,14 @@ Deno.test("multiple if clauses", () => {
   assertEquals(res, [
     {
       if: [
-        { cond: { binop: "eq", argl: "x", argr: 90 }, then: ["noop"] },
+        {
+          cond: {
+            binop: "eq",
+            argl: { binop: "+", argl: 7, argr: 8 },
+            argr: 90,
+          },
+          then: ["noop"],
+        },
         { cond: false, then: ["break"] },
       ],
       else: ["continue"],
@@ -228,6 +238,43 @@ Deno.test("variables with regular types", () => {
     { set: "x", value: 1 },
     { set: "y", value: "asd" },
     { set: "z", value: [] },
+  ]);
+});
+
+Deno.test("throws if type mismatch", () => {
+  const res: IncompatibleTypesError = run(`<x: number> = "asd";`);
+  assertEquals(res.message, `Type "string" is not assignable to type "number"`);
+});
+
+Deno.test("throws if type mismatch in implicit use", () => {
+  const res: IncompatibleTypesError = run(`
+    <x> = "asd";
+    <y> = 1 + 2;
+    <x> = y;
+  `);
+  assertEquals(res.message, `Type "number" is not assignable to type "string"`);
+});
+
+Deno.test("throws if type undefined", () => {
+  const res: IncompatibleTypesError = run(`
+    <x: Person> = { name: "Test", age: 40};
+  `);
+  assertEquals(res.message, `Cannot find name "Person"`);
+});
+
+Deno.test("js magic not allowed", () => {
+  const res: Error = run(`<x> = 1 + "asd";`);
+  const res2: Error = run(`<y> = - not 4;`);
+  const res3: Error = run(`<z> = [1, 2] * 6;`);
+  assertEquals(res.message, "Invalid expression");
+  assertEquals(res2.message, "Invalid expression");
+  assertEquals(res3.message, "Invalid expression");
+});
+
+Deno.test("string concatenation using +", () => {
+  const res = run(`<x> = "aaa" + "bbb";`);
+  assertEquals(res, [
+    { set: "x", value: { binop: "+", argl: "aaa", argr: "bbb" } },
   ]);
 });
 
