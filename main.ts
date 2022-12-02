@@ -33,9 +33,14 @@ export function run(code: string) {
 console.log(
   JSON.stringify(
     run(`
-    <x> = "asd";
-    <y> = 1 + 2;
-    <x> = 8;
+    <<Person>> {
+      name: string;
+      age: number;
+    }
+    <w: Person> = {
+      name: "test",
+      age: 30
+    };
   `)
   )
 );

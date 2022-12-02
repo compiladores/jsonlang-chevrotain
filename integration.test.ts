@@ -315,3 +315,16 @@ Deno.test("custom types", () => {
   `);
   assertEquals(res, []);
 });
+
+Deno.test("cannot redefine type", () => {
+  const res: Error = run(`
+    <<Person>> {
+      name: string;
+      age: number;
+    }
+    <<Person>> {
+      name: string;
+    }
+  `);
+  assertEquals(res.message, "Type already defined");
+});

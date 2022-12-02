@@ -5,13 +5,24 @@ interface TypedVar {
   type: string;
 }
 
-const NATIVE_TYPES = ["string", "number", "boolean", "any", "object", "array"];
+export interface DefinedType {
+  name?: string;
+  type: string;
+  children?: DefinedType[];
+}
 
-//TODO: ver como defino tipos custom raros
+const NATIVE_TYPES = [
+  { type: "string" },
+  { type: "number" },
+  { type: "boolean" },
+  { type: "any" },
+  { type: "object" },
+  { type: "array" },
+];
 
 export class TypedVariablesChecker {
   private typedVars: TypedVar[];
-  private definedTypes: string[];
+  private definedTypes: DefinedType[];
 
   constructor() {
     this.typedVars = [];
@@ -39,15 +50,19 @@ export class TypedVariablesChecker {
     return variable.type;
   }
 
-  areCompatible(existingVarType: string, expressionVarType: string): boolean {
-    const expressionVar = this.definedTypes.find(
-      (t) => t === expressionVarType
+  areCompatible(expressionVarType: string, explicitVarType: string): boolean {
+    const explicitVar = this.definedTypes.find(
+      (t) => t.type === explicitVarType
     );
-    if (!expressionVar) throw new UndefinedTypeError(expressionVarType);
-    if (existingVarType === expressionVarType) return true;
+    if (!explicitVar) throw new UndefinedTypeError(explicitVarType);
+    if (expressionVarType === explicitVarType) return true;
     return false;
     //TODO: chequear compatibilidad de diccionario con tipo definido
   }
 
-  // defineType() {}
+  defineType(type: DefinedType) {
+    if (this.definedTypes.find((t) => t.type === type.type))
+      throw new Error("Type already defined");
+    this.definedTypes.push(type);
+  }
 }

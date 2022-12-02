@@ -10,16 +10,16 @@ import {
   StatementCstChildren,
   TermCstChildren,
   TopRuleCstChildren,
+  TypeStatementCstChildren,
   UnaryCstChildren,
   VariableStatementCstChildren,
 } from "../CSTVisitor/compilang_cst.d.ts";
 import { parser } from "../parser/index.ts";
-import { TypedVariablesChecker } from "./typedVariablesChecker.ts";
+import { DefinedType, TypedVariablesChecker } from "./typedVariablesChecker.ts";
 import { IncompatibleTypesError } from "./typeError.ts";
 
 const BaseCSTVisitor = parser.getBaseCstVisitorConstructorWithDefaults();
 
-//TODO: definir tipos mediante lo nuevo del parser
 //TODO: arrays
 //TODO: diccionarios
 //TODO: funciones y calls
@@ -51,6 +51,7 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
     if (ctx.callStatement) this.visit(ctx.callStatement);
     if (ctx.returnStatement) this.visit(ctx.returnStatement);
     if (ctx.functionStatement) this.visit(ctx.functionStatement);
+    if (ctx.typeStatement) this.visit(ctx.typeStatement);
   }
 
   forStatement(ctx: ForStatementCstChildren) {
@@ -58,6 +59,22 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
       value: ctx.Identifier[0].image,
       type: "number",
     });
+  }
+
+  typeStatement(ctx: TypeStatementCstChildren) {
+    const identifiers = ctx.Identifier.map((i) => i.image);
+    if (identifiers.length > 0) {
+      const newType: DefinedType = { type: identifiers.shift()!, children: [] };
+      let i = 0;
+      while (i < identifiers.length) {
+        newType.children?.push({
+          name: identifiers[i],
+          type: identifiers[i + 1],
+        });
+        i += 2;
+      }
+      this.typedVariables.defineType(newType);
+    }
   }
 
   // callStatement(ctx: CallStatementCstChildren) {
