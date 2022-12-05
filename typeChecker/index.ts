@@ -1,11 +1,16 @@
 import {
   BlockStatementCstChildren,
+  CallExpressionCstChildren,
+  CallStatementCstChildren,
   ComparisonCstChildren,
   DictionaryCstChildren,
   EqualtyCstChildren,
   ExpressionCstChildren,
   FactorCstChildren,
   ForStatementCstChildren,
+  FuncargDefinitionCstChildren,
+  FuncargsDefinitionCstChildren,
+  FunctionStatementCstChildren,
   ParenExpressionCstChildren,
   SimpleExpressionCstChildren,
   StatementCstChildren,
@@ -21,7 +26,7 @@ import { IncompatibleTypesError } from "./typeError.ts";
 
 const BaseCSTVisitor = parser.getBaseCstVisitorConstructorWithDefaults();
 
-//TODO: funciones y calls
+//TODO: checkear calls arguments contra los esperados por la funcion
 //TODO: any en expressions?
 
 export class TypeCheckerVisitor extends BaseCSTVisitor {
@@ -79,16 +84,16 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
     }
   }
 
-  // callStatement(ctx: CallStatementCstChildren) {
-  //   return this.visit(ctx.callExpression);
-  // }
+  callStatement(ctx: CallStatementCstChildren) {
+    return this.visit(ctx.callExpression);
+  }
 
-  // callExpression(ctx: CallExpressionCstChildren) {
-  //   const args = ctx.funcargs.flatMap((arg) => this.visit(arg));
-  //   return {
-  //     call: ctx.Identifier[0].image,
-  //     args,
-  //   };
+  callExpression(ctx: CallExpressionCstChildren) {
+    this.visit(ctx.funcargs);
+    return this.typedVariables.getTypeForVariable(ctx.Identifier[0].image);
+  }
+
+  // funcargs(ctx: FuncargsCstChildren) {
   // }
 
   variableStatement(ctx: VariableStatementCstChildren) {
@@ -107,29 +112,30 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
     }
   }
 
-  // returnStatement(ctx: ReturnStatementCstChildren) {
-  //   if (ctx.expression) return { return: this.visit(ctx.expression) };
-  //   if (ctx.parenExpression) return { return: this.visit(ctx.parenExpression) };
-  // }
+  functionStatement(ctx: FunctionStatementCstChildren) {
+    const returnTypename = ctx.Identifier[1] ? ctx.Identifier[1].image : "any";
+    this.typedVariables.add({
+      value: ctx.Identifier[0].image,
+      type: { typename: returnTypename },
+    });
+    ctx.funcargsDefinition.map((d) => this.visit(d));
+  }
 
-  // functionStatement(ctx: FunctionStatementCstChildren) {
-  //   const args = ctx.Identifier.map((identifier) => identifier.image);
-  //   const functionName = args.shift();
-  //   return {
-  //     function: functionName,
-  //     args,
-  //     block: this.visit(ctx.blockStatement),
-  //   };
-  // }
+  funcargsDefinition(ctx: FuncargsDefinitionCstChildren) {
+    if (ctx.funcargDefinition) ctx.funcargDefinition.map((d) => this.visit(d));
+  }
+
+  funcargDefinition(ctx: FuncargDefinitionCstChildren) {
+    const typename = ctx.Identifier[1] ? ctx.Identifier[1].image : "any";
+    this.typedVariables.add({
+      value: ctx.Identifier[0].image,
+      type: { typename },
+    });
+  }
 
   blockStatement(ctx: BlockStatementCstChildren) {
     return this.visit(ctx.topRule);
   }
-
-  // funcargs(ctx: FuncargsCstChildren) {
-  //   if (!ctx.expression) return [];
-  //   return ctx.expression.map((expr) => this.visit(expr));
-  // }
 
   parenExpression(ctx: ParenExpressionCstChildren) {
     return this.visit(ctx.expression);
@@ -198,7 +204,7 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
     if (ctx.StringLiteral) return { typename: "string" };
     if (ctx.array) return { typename: "array" };
     if (ctx.dictionary) return this.visit(ctx.dictionary);
-    if (ctx.callExpression) return { typename: "string" }; //return this.visit(ctx.callExpression);
+    if (ctx.callExpression) return this.visit(ctx.callExpression);
     throw new Error();
   }
 

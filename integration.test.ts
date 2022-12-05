@@ -213,7 +213,7 @@ Deno.test("function and call", () => {
     <test(a, b)> {
       return a + b;
     }
-    test->(2, x + -y);
+    test->(2, 5 + -7);
   `);
   assertEquals(res, [
     {
@@ -223,7 +223,7 @@ Deno.test("function and call", () => {
     },
     {
       call: "test",
-      args: [2, { binop: "+", argl: "x", argr: { unop: "-", arg: "y" } }],
+      args: [2, { binop: "+", argl: 5, argr: { unop: "-", arg: 7 } }],
     },
   ]);
 });
@@ -278,6 +278,11 @@ Deno.test("string concatenation using +", () => {
   ]);
 });
 
+Deno.test("should work correctly if type is explicit any", () => {
+  const res = run(`<x: any> = "aaa";`);
+  assertEquals(res, [{ set: "x", value: "aaa" }]);
+});
+
 Deno.test("function and call with types", () => {
   const res = run(`
     <test(a: number, b: number): number> {
@@ -296,6 +301,32 @@ Deno.test("function and call with types", () => {
       args: [2, { binop: "+", argl: 10, argr: { unop: "-", arg: 1 } }],
     },
   ]);
+});
+
+Deno.test(
+  "throws if function call with return type is assigned to var of other type",
+  () => {
+    const res = run(`
+    <test(a: number, b: number): number> {
+      return a + b;
+    }
+    <x: string> = test->(2, 10 + -1);
+  `);
+    assertEquals(
+      res.message,
+      `Type "number" is not assignable to type "string"`
+    );
+  }
+);
+
+Deno.test("throws if function called with args of different types", () => {
+  const res = run(`
+    <test(a: number, b: number): number> {
+      return a + b;
+    }
+    <x: number> = test->("asd", "asd");
+  `);
+  assertEquals(res.message, `Type "string" is not assignable to type "number"`);
 });
 
 Deno.test("custom types and object expression is compatible", () => {

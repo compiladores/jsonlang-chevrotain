@@ -130,12 +130,32 @@ export interface FunctionStatementCstNode extends CstNode {
 export type FunctionStatementCstChildren = {
   LAngleBracket: IToken[];
   Identifier: IToken[];
-  LParen: IToken[];
+  funcargsDefinition: FuncargsDefinitionCstNode[];
   Colon?: IToken[];
-  Comma?: IToken[];
-  RParen: IToken[];
   RAngleBracket: IToken[];
   blockStatement: BlockStatementCstNode[];
+};
+
+export interface FuncargsDefinitionCstNode extends CstNode {
+  name: "funcargsDefinition";
+  children: FuncargsDefinitionCstChildren;
+}
+
+export type FuncargsDefinitionCstChildren = {
+  LParen: IToken[];
+  funcargDefinition?: FuncargDefinitionCstNode[];
+  Comma?: IToken[];
+  RParen: IToken[];
+};
+
+export interface FuncargDefinitionCstNode extends CstNode {
+  name: "funcargDefinition";
+  children: FuncargDefinitionCstChildren;
+}
+
+export type FuncargDefinitionCstChildren = {
+  Identifier: IToken[];
+  Colon?: IToken[];
 };
 
 export interface BreakStatementCstNode extends CstNode {
@@ -344,6 +364,8 @@ export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   doUntilStatement(children: DoUntilStatementCstChildren, param?: IN): OUT;
   forStatement(children: ForStatementCstChildren, param?: IN): OUT;
   functionStatement(children: FunctionStatementCstChildren, param?: IN): OUT;
+  funcargsDefinition(children: FuncargsDefinitionCstChildren, param?: IN): OUT;
+  funcargDefinition(children: FuncargDefinitionCstChildren, param?: IN): OUT;
   breakStatement(children: BreakStatementCstChildren, param?: IN): OUT;
   continueStatement(children: ContinueStatementCstChildren, param?: IN): OUT;
   returnStatement(children: ReturnStatementCstChildren, param?: IN): OUT;

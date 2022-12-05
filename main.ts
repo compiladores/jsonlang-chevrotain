@@ -3,9 +3,6 @@ import { parser } from "./parser/index.ts";
 import { CSTVisitor } from "./CSTVisitor/index.ts";
 import { TypeCheckerVisitor } from "./typeChecker/index.ts";
 
-//TODO: si necesito que no sea infinito el diccionario/array separar simpleExpression dejandole
-//      solo los basicos, y que haya otro que es extendedSimpleExpression o algo asi.
-
 export function run(code: string) {
   const res = CompilangLexer.tokenize(code);
 

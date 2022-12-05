@@ -15,7 +15,9 @@ import {
   ExpressionCstChildren,
   FactorCstChildren,
   ForStatementCstChildren,
+  FuncargDefinitionCstChildren,
   FuncargsCstChildren,
+  FuncargsDefinitionCstChildren,
   FunctionStatementCstChildren,
   IfStatementCstChildren,
   ParenExpressionCstChildren,
@@ -125,13 +127,21 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
   }
 
   functionStatement(ctx: FunctionStatementCstChildren) {
-    const args = ctx.Identifier.map((identifier) => identifier.image);
-    const functionName = args.shift();
     return {
-      function: functionName,
-      args,
+      function: ctx.Identifier[0].image,
+      args: this.visit(ctx.funcargsDefinition),
       block: this.visit(ctx.blockStatement),
     };
+  }
+
+  funcargsDefinition(ctx: FuncargsDefinitionCstChildren) {
+    if (ctx.funcargDefinition)
+      return ctx.funcargDefinition.map((d) => this.visit(d));
+    else return [];
+  }
+
+  funcargDefinition(ctx: FuncargDefinitionCstChildren) {
+    return ctx.Identifier[0].image;
   }
 
   blockStatement(ctx: BlockStatementCstChildren) {

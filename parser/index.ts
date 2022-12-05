@@ -147,24 +147,30 @@ class CompilangParser extends CstParser {
   functionStatement = this.RULE("functionStatement", () => {
     this.CONSUME(LAngleBracket);
     this.CONSUME(Identifier);
-    this.CONSUME(LParen);
-    this.MANY_SEP({
-      SEP: Comma,
-      DEF: () => {
-        this.CONSUME2(Identifier);
-        this.OPTION(() => {
-          this.CONSUME(Colon);
-          this.CONSUME3(Identifier);
-        });
-      },
-    });
-    this.CONSUME(RParen);
-    this.OPTION2(() => {
-      this.CONSUME2(Colon);
-      this.CONSUME4(Identifier);
+    this.SUBRULE(this.funcargsDefinition);
+    this.OPTION(() => {
+      this.CONSUME(Colon);
+      this.CONSUME2(Identifier);
     });
     this.CONSUME(RAngleBracket);
     this.SUBRULE(this.blockStatement);
+  });
+
+  funcargsDefinition = this.RULE("funcargsDefinition", () => {
+    this.CONSUME(LParen);
+    this.MANY_SEP({
+      SEP: Comma,
+      DEF: () => this.SUBRULE(this.funcargDefinition),
+    });
+    this.CONSUME(RParen);
+  });
+
+  funcargDefinition = this.RULE("funcargDefinition", () => {
+    this.CONSUME(Identifier);
+    this.OPTION(() => {
+      this.CONSUME(Colon);
+      this.CONSUME2(Identifier);
+    });
   });
 
   breakStatement = this.RULE("breakStatement", () => {
