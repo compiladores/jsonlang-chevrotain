@@ -55,6 +55,8 @@ export class TypedVariablesChecker {
     );
     if (!explicitVar) throw new UndefinedTypeError(explicitVarType.typename);
     if (expressionVarType.typename === explicitVarType.typename) return true;
+    if ([explicitVarType.typename, expressionVarType.typename].includes("any"))
+      return true;
     if (this.canBeCompared(expressionVarType, explicitVar)) {
       for (const child of explicitVar.children!) {
         const prop = expressionVarType.children?.find(

@@ -278,9 +278,22 @@ Deno.test("string concatenation using +", () => {
   ]);
 });
 
-Deno.test("should work correctly if type is explicit any", () => {
+Deno.test("should work correctly if explicit type is any", () => {
   const res = run(`<x: any> = "aaa";`);
   assertEquals(res, [{ set: "x", value: "aaa" }]);
+});
+
+Deno.test("should work correctly if implicit type is any", () => {
+  const res = run(`
+  <asd()> {
+    return 1;
+  }
+  <y: string> = asd->();
+  `);
+  assertEquals(res, [
+    { function: "asd", args: [], block: [{ return: 1 }] },
+    { set: "y", value: { call: "asd", args: [] } },
+  ]);
 });
 
 Deno.test("function and call with types", () => {
