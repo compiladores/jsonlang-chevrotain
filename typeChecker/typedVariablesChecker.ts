@@ -1,23 +1,23 @@
 import { IncompatibleTypesError, UndefinedTypeError } from "./typeError.ts";
 
-interface TypedVar {
-  value: string;
-  type: string;
-}
-
 export interface DefinedType {
   name?: string;
-  type: string;
+  typename: string;
   children?: DefinedType[];
 }
 
+interface TypedVar {
+  value: string;
+  type: DefinedType;
+}
+
 const NATIVE_TYPES = [
-  { type: "string" },
-  { type: "number" },
-  { type: "boolean" },
-  { type: "any" },
-  { type: "object" },
-  { type: "array" },
+  { typename: "string" },
+  { typename: "number" },
+  { typename: "boolean" },
+  { typename: "any" },
+  { typename: "object", children: [] },
+  { typename: "array" },
 ];
 
 export class TypedVariablesChecker {
@@ -37,31 +37,47 @@ export class TypedVariablesChecker {
       this.typedVars.push(variable);
     } else {
       if (!this.areCompatible(existingVariable.type, variable.type)) {
-        console.log(existingVariable.type, variable.type);
         throw new IncompatibleTypesError(variable.type, existingVariable.type);
       }
     }
   }
 
-  getTypeForVariable(variableName: string) {
+  getTypeForVariable(variableName: string): DefinedType {
     console.log({ ad: this.typedVars });
     const variable = this.typedVars.find((v) => v.value === variableName);
     if (!variable) throw new UndefinedTypeError(variableName);
     return variable.type;
   }
 
-  areCompatible(expressionVarType: string, explicitVarType: string): boolean {
+  areCompatible(expressionVarType: DefinedType, explicitVarType: DefinedType) {
     const explicitVar = this.definedTypes.find(
-      (t) => t.type === explicitVarType
+      (t) => t.typename === explicitVarType.typename
     );
-    if (!explicitVar) throw new UndefinedTypeError(explicitVarType);
-    if (expressionVarType === explicitVarType) return true;
+    if (!explicitVar) throw new UndefinedTypeError(explicitVarType.typename);
+    if (expressionVarType.typename === explicitVarType.typename) return true;
+    if (this.canBeCompared(expressionVarType, explicitVar)) {
+      for (const child of explicitVar.children!) {
+        const prop = expressionVarType.children?.find(
+          (c) => c.name === child.name
+        );
+        if (!prop) return false;
+        if (prop.typename !== child.typename) return false;
+      }
+      return true;
+    }
     return false;
-    //TODO: chequear compatibilidad de diccionario con tipo definido
+  }
+
+  canBeCompared(expressionVarType: DefinedType, explicitVarType: DefinedType) {
+    return (
+      explicitVarType.children &&
+      explicitVarType.children &&
+      ["object", "any"].includes(expressionVarType.typename)
+    );
   }
 
   defineType(type: DefinedType) {
-    if (this.definedTypes.find((t) => t.type === type.type))
+    if (this.definedTypes.find((t) => t.typename === type.typename))
       throw new Error("Type already defined");
     this.definedTypes.push(type);
   }

@@ -1,6 +1,7 @@
 import {
   BlockStatementCstChildren,
   ComparisonCstChildren,
+  DictionaryCstChildren,
   EqualtyCstChildren,
   ExpressionCstChildren,
   FactorCstChildren,
@@ -20,8 +21,6 @@ import { IncompatibleTypesError } from "./typeError.ts";
 
 const BaseCSTVisitor = parser.getBaseCstVisitorConstructorWithDefaults();
 
-//TODO: arrays
-//TODO: diccionarios
 //TODO: funciones y calls
 //TODO: any en expressions?
 
@@ -57,19 +56,22 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
   forStatement(ctx: ForStatementCstChildren) {
     this.typedVariables.add({
       value: ctx.Identifier[0].image,
-      type: "number",
+      type: { typename: "number" },
     });
   }
 
   typeStatement(ctx: TypeStatementCstChildren) {
     const identifiers = ctx.Identifier.map((i) => i.image);
     if (identifiers.length > 0) {
-      const newType: DefinedType = { type: identifiers.shift()!, children: [] };
+      const newType: DefinedType = {
+        typename: identifiers.shift()!,
+        children: [],
+      };
       let i = 0;
       while (i < identifiers.length) {
         newType.children?.push({
           name: identifiers[i],
-          type: identifiers[i + 1],
+          typename: identifiers[i + 1],
         });
         i += 2;
       }
@@ -90,9 +92,10 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
   // }
 
   variableStatement(ctx: VariableStatementCstChildren) {
-    const expressionType = this.visit(ctx.expression);
+    const expressionType: DefinedType = this.visit(ctx.expression);
     if (ctx.Colon) {
-      const explicitType = ctx.Identifier[1].image;
+      const explicitTypename = ctx.Identifier[1].image;
+      const explicitType: DefinedType = { typename: explicitTypename };
       if (!this.typedVariables.areCompatible(expressionType, explicitType)) {
         throw new IncompatibleTypesError(expressionType, explicitType);
       }
@@ -132,81 +135,81 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
     return this.visit(ctx.expression);
   }
 
-  expression(ctx: ExpressionCstChildren) {
-    if (ctx.LogicalBinop) return "boolean";
+  expression(ctx: ExpressionCstChildren): DefinedType {
+    if (ctx.LogicalBinop) return { typename: "boolean" };
     return this.visit(ctx.equalty[0]);
   }
 
-  equalty(ctx: EqualtyCstChildren) {
-    if (ctx.EqualtyBinop) return "boolean";
+  equalty(ctx: EqualtyCstChildren): DefinedType {
+    if (ctx.EqualtyBinop) return { typename: "boolean" };
     return this.visit(ctx.comparison[0]);
   }
 
-  comparison(ctx: ComparisonCstChildren) {
-    if (ctx.ComparisonBinop) return "boolean";
+  comparison(ctx: ComparisonCstChildren): DefinedType {
+    if (ctx.ComparisonBinop) return { typename: "boolean" };
     return this.visit(ctx.term[0]);
   }
 
-  term(ctx: TermCstChildren) {
+  term(ctx: TermCstChildren): DefinedType {
     if (ctx.TermBinop) {
       const operators = ctx.TermBinop.map((op) => op.image);
       const allPlusOperators = operators.every((op) => op === "+");
-      const factorTypes = ctx.factor.map((f) => this.visit(f));
-      const allStrings = factorTypes.every((f) => f === "string");
-      const allNumbers = factorTypes.every((f) => f === "number");
-      if (allPlusOperators && allStrings) return "string";
-      if (allNumbers) return "number";
+      const factorTypes: DefinedType[] = ctx.factor.map((f) => this.visit(f));
+      const allStrings = factorTypes.every((f) => f.typename === "string");
+      const allNumbers = factorTypes.every((f) => f.typename === "number");
+      if (allPlusOperators && allStrings) return { typename: "string" };
+      if (allNumbers) return { typename: "number" };
       throw new Error("Invalid expression");
     }
     return this.visit(ctx.factor[0]);
   }
 
-  factor(ctx: FactorCstChildren) {
+  factor(ctx: FactorCstChildren): DefinedType {
     if (ctx.FactorBinop) {
-      const unaryTypes = ctx.unary.map((u) => this.visit(u));
-      const allNumbers = unaryTypes.every((f) => f === "number");
-      if (allNumbers) return "number";
+      const unaryTypes: DefinedType[] = ctx.unary.map((u) => this.visit(u));
+      const allNumbers = unaryTypes.every((f) => f.typename === "number");
+      if (allNumbers) return { typename: "number" };
       throw new Error("Invalid expression");
     }
     return this.visit(ctx.unary[0]);
   }
 
-  unary(ctx: UnaryCstChildren) {
+  unary(ctx: UnaryCstChildren): DefinedType {
     if (ctx.Unop && ctx.unary) {
       const unop = ctx.Unop[0].image;
-      const unary = this.visit(ctx.unary[0]);
-      if (unary === "number" && unop === "-") return "number";
-      if (unary === "number" && unop === "not") return "boolean";
-      if (unary === "boolean" && unop === "not") return "boolean";
+      const unary: DefinedType = this.visit(ctx.unary[0]);
+      if (unary.typename === "number" && unop === "-")
+        return { typename: "number" };
+      if (unary.typename === "number" && unop === "not")
+        return { typename: "boolean" };
+      if (unary.typename === "boolean" && unop === "not")
+        return { typename: "boolean" };
       throw new Error("Invalid expression");
     }
     if (ctx.simpleExpression) return this.visit(ctx.simpleExpression);
+    throw new Error();
   }
 
-  simpleExpression(ctx: SimpleExpressionCstChildren) {
-    if (ctx.Integer) return "number";
-    if (ctx.False || ctx.True) return "boolean";
+  simpleExpression(ctx: SimpleExpressionCstChildren): DefinedType {
+    if (ctx.Integer) return { typename: "number" };
+    if (ctx.False || ctx.True) return { typename: "boolean" };
     if (ctx.Identifier)
       return this.typedVariables.getTypeForVariable(ctx.Identifier[0].image);
-    if (ctx.StringLiteral) return "string";
-    if (ctx.array) return "array";
-    if (ctx.dictionary) return "object";
-    // if (ctx.callExpression) return this.visit(ctx.callExpression);
+    if (ctx.StringLiteral) return { typename: "string" };
+    if (ctx.array) return { typename: "array" };
+    if (ctx.dictionary) return this.visit(ctx.dictionary);
+    if (ctx.callExpression) return { typename: "string" }; //return this.visit(ctx.callExpression);
+    throw new Error();
   }
 
-  // array(ctx: ArrayCstChildren) {
-  //   if (!ctx.expression) return [];
-  //   return ctx.expression.map((expr) => this.visit(expr));
-  // }
-
-  // dictionary(ctx: DictionaryCstChildren) {
-  //   const retVal: any = { dict: [] };
-  //   if (!ctx.Identifier || !ctx.expression) return retVal;
-  //   for (let i = 0; i < ctx.Identifier.length; i++) {
-  //     const key = ctx.Identifier[i].image;
-  //     const value = this.visit(ctx.expression[i]);
-  //     retVal.dict.push({ [key]: value });
-  //   }
-  //   return retVal;
-  // }
+  dictionary(ctx: DictionaryCstChildren): DefinedType {
+    const retVal: DefinedType = { typename: "object", children: [] };
+    if (!ctx.Identifier || !ctx.expression) return retVal;
+    for (let i = 0; i < ctx.Identifier.length; i++) {
+      const name = ctx.Identifier[i].image;
+      const type: DefinedType = this.visit(ctx.expression[i]);
+      retVal.children?.push({ name, typename: type.typename });
+    }
+    return retVal;
+  }
 }

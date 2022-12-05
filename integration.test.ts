@@ -298,7 +298,7 @@ Deno.test("function and call with types", () => {
   ]);
 });
 
-Deno.test("custom types", () => {
+Deno.test("custom types and object expression is compatible", () => {
   const res = run(`
     <<Person>> {
       name: string;
@@ -308,12 +308,11 @@ Deno.test("custom types", () => {
       name: "test",
       age: 30
     };
-    <make_person(n: string, a: number): Person> {
-      return { name: n, age: a };
-    }
-    <person: Person> = make_person->("Other", 45);
   `);
-  assertEquals(res, []);
+  assertEquals(res, [
+    undefined,
+    { set: "w", value: { dict: [{ name: "test" }, { age: 30 }] } },
+  ]);
 });
 
 Deno.test("cannot redefine type", () => {
