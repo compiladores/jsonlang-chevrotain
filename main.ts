@@ -23,8 +23,8 @@ export function run(code: string) {
     return e;
   }
 
-  const ast = CSTVisitor.visit(cst);
-  return ast;
+  const jsonlang = CSTVisitor.visit(cst);
+  return jsonlang;
 }
 
 console.log(

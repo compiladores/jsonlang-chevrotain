@@ -27,9 +27,6 @@ import { IncompatibleTypesError } from "./typeError.ts";
 
 const BaseCSTVisitor = parser.getBaseCstVisitorConstructorWithDefaults();
 
-//TODO: checkear calls arguments contra los esperados por la funcion
-//TODO: any en expressions?
-
 export class TypeCheckerVisitor extends BaseCSTVisitor {
   private typedVariables: TypedVariablesChecker;
   constructor() {
