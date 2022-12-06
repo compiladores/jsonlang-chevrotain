@@ -153,7 +153,6 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
   }
 
   breakStatement(_: BreakStatementCstChildren) {
-    console.log("asd");
     return "break";
   }
 

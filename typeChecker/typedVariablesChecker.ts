@@ -4,6 +4,7 @@ export interface DefinedType {
   name?: string;
   typename: string;
   children?: DefinedType[];
+  funcargs?: TypedVar[];
 }
 
 interface TypedVar {
@@ -23,6 +24,7 @@ const NATIVE_TYPES = [
 export class TypedVariablesChecker {
   private typedVars: TypedVar[];
   private definedTypes: DefinedType[];
+  private functionBeingAdded?: TypedVar;
 
   constructor() {
     this.typedVars = [];
@@ -43,7 +45,6 @@ export class TypedVariablesChecker {
   }
 
   getTypeForVariable(variableName: string): DefinedType {
-    console.log({ ad: this.typedVars });
     const variable = this.typedVars.find((v) => v.value === variableName);
     if (!variable) throw new UndefinedTypeError(variableName);
     return variable.type;
@@ -82,5 +83,14 @@ export class TypedVariablesChecker {
     if (this.definedTypes.find((t) => t.typename === type.typename))
       throw new Error("Type already defined");
     this.definedTypes.push(type);
+  }
+
+  addFunction(variable: TypedVar) {
+    this.add(variable);
+    this.functionBeingAdded = variable;
+  }
+
+  addToCurrentFunction(variable: TypedVar) {
+    this.functionBeingAdded?.type.funcargs?.push(variable);
   }
 }

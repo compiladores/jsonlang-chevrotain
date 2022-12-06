@@ -27,17 +27,13 @@ export function run(code: string) {
   return ast;
 }
 
-// console.log(
-//   JSON.stringify(
-//     run(`
-//     <<Person>> {
-//       name: string;
-//       age: number;
-//     }
-//     <w: Person> = {
-//       name: "test",
-//       age: 30
-//     };
-//   `)
-//   )
-// );
+console.log(
+  JSON.stringify(
+    run(`
+    <test(a: number, b: number): number> {
+      return a + b;
+    }
+    <x: number> = test->("asd", "asd");
+  `)
+  )
+);

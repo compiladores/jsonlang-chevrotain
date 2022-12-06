@@ -9,6 +9,7 @@ import {
   FactorCstChildren,
   ForStatementCstChildren,
   FuncargDefinitionCstChildren,
+  FuncargsCstChildren,
   FuncargsDefinitionCstChildren,
   FunctionStatementCstChildren,
   ParenExpressionCstChildren,
@@ -89,12 +90,31 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
   }
 
   callExpression(ctx: CallExpressionCstChildren) {
-    this.visit(ctx.funcargs);
-    return this.typedVariables.getTypeForVariable(ctx.Identifier[0].image);
+    const type = this.typedVariables.getTypeForVariable(
+      ctx.Identifier[0].image
+    );
+    const functionArgs = type.funcargs!;
+    const expressionArgs = this.visit(ctx.funcargs);
+    for (let i = 0; i < functionArgs.length; i++) {
+      if (
+        !this.typedVariables.areCompatible(
+          functionArgs[i].type,
+          expressionArgs[i]
+        )
+      ) {
+        throw new IncompatibleTypesError(
+          expressionArgs[i],
+          functionArgs[i].type
+        );
+      }
+    }
+    return type;
   }
 
-  // funcargs(ctx: FuncargsCstChildren) {
-  // }
+  funcargs(ctx: FuncargsCstChildren) {
+    if (!ctx.expression) return [];
+    return ctx.expression.map((e) => this.visit(e));
+  }
 
   variableStatement(ctx: VariableStatementCstChildren) {
     const expressionType: DefinedType = this.visit(ctx.expression);
@@ -114,9 +134,9 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
 
   functionStatement(ctx: FunctionStatementCstChildren) {
     const returnTypename = ctx.Identifier[1] ? ctx.Identifier[1].image : "any";
-    this.typedVariables.add({
+    this.typedVariables.addFunction({
       value: ctx.Identifier[0].image,
-      type: { typename: returnTypename },
+      type: { typename: returnTypename, funcargs: [] },
     });
     ctx.funcargsDefinition.map((d) => this.visit(d));
   }
@@ -127,7 +147,7 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
 
   funcargDefinition(ctx: FuncargDefinitionCstChildren) {
     const typename = ctx.Identifier[1] ? ctx.Identifier[1].image : "any";
-    this.typedVariables.add({
+    this.typedVariables.addToCurrentFunction({
       value: ctx.Identifier[0].image,
       type: { typename },
     });

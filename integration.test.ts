@@ -18,6 +18,7 @@ Deno.test("break and continue", () => {
 Deno.test("return and multiple expressions", () => {
   const res = run(`
   <x> = 1;
+  <sum(a, b)> { return a + b; }
   return "asd";
   return 1;
   return true;
@@ -34,6 +35,11 @@ Deno.test("return and multiple expressions", () => {
 `);
   assertEquals(res, [
     { set: "x", value: 1 },
+    {
+      function: "sum",
+      args: ["a", "b"],
+      block: [{ return: { binop: "+", argl: "a", argr: "b" } }],
+    },
     { return: "asd" },
     { return: 1 },
     { return: true },
