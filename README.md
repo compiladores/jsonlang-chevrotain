@@ -162,7 +162,61 @@ Ademas, como agregue soporte para TDA y verificación de tipos, agregue funciona
 
 ### ¿Cómo agregaste Verificación de tipos estáticos?
 
-//TODO: terminar
+Para agregar verificación de tipos estáticos, aproveche la facilidad de la herramienta para crear visitors y cree otro dedicado a la verificación de tipos.
+
+Este se compone de dos partes. El visitor en si mismo, que visita los nodos del arbol, y un verificador de tipos con las siguientes responsabilidades:
+
+- Almacenar las variables y sus tipos
+- Determinar compatibilidades entre tipos
+
+Este es, por ejemplo, el método para determinar si son compatibles dos tipos:
+
+```
+  areCompatible(expressionVarType: DefinedType, explicitVarType: DefinedType) {
+    const explicitVar = this.definedTypes.find(
+      (t) => t.typename === explicitVarType.typename
+    );
+    if (!explicitVar) throw new UndefinedTypeError(explicitVarType.typename);
+    if (expressionVarType.typename === explicitVarType.typename) return true;
+    if ([explicitVarType.typename, expressionVarType.typename].includes("any"))
+      return true;
+    if (this.canBeCompared(expressionVarType, explicitVar)) {
+      for (const child of explicitVar.children!) {
+        const prop = expressionVarType.children?.find(
+          (c) => c.name === child.name
+        );
+        if (!prop) return false;
+        if (prop.typename !== child.typename) return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  canBeCompared(expressionVarType: DefinedType, explicitVarType: DefinedType) {
+    return (
+      explicitVarType.children &&
+      explicitVarType.children &&
+      ["object", "any"].includes(expressionVarType.typename)
+    );
+  }
+```
+
+Volviendo al visitor, este asignará tipos principalmente en las expresiones. Este es el metodo visit de simpleExpression:
+
+```
+  simpleExpression(ctx: SimpleExpressionCstChildren): DefinedType {
+    if (ctx.Integer) return { typename: "number" };
+    if (ctx.False || ctx.True) return { typename: "boolean" };
+    if (ctx.Identifier)
+      return this.typedVariables.getTypeForVariable(ctx.Identifier[0].image);
+    if (ctx.StringLiteral) return { typename: "string" };
+    if (ctx.array) return { typename: "array" };
+    if (ctx.dictionary) return this.visit(ctx.dictionary);
+    if (ctx.callExpression) return this.visit(ctx.callExpression);
+    throw new Error();
+  }
+```
 
 ### ¿Cómo agregaste TDA?
 
@@ -195,7 +249,37 @@ Entonces, necesité ampliar el parser para permitirlo:
   });
 ```
 
-//TODO: terminar
+Por último, solo resta poder saber si el tipo definido y una expresión de tipo objeto/diccionario que se le asigne son compatibles, para poder permitir lo siguiente:
+
+```
+<<Person>> {
+  name: string;
+  age: number;
+}
+<w: Person> = {
+  name: "test",
+  age: 30
+};
+```
+
+Esto esta logrado en el metodo `areCompatible` que ya vimos:
+
+```
+  areCompatible(expressionVarType: DefinedType, explicitVarType: DefinedType) {
+    ...
+    if (this.canBeCompared(expressionVarType, explicitVar)) {
+      for (const child of explicitVar.children!) {
+        const prop = expressionVarType.children?.find(
+          (c) => c.name === child.name
+        );
+        if (!prop) return false;
+        if (prop.typename !== child.typename) return false;
+      }
+      return true;
+    }
+    return false;
+  }
+```
 
 ### Herramienta de Parsing: Chevrotain
 
