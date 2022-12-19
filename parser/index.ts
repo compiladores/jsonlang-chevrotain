@@ -26,6 +26,7 @@ import {
   LCurly,
   LParen,
   Minus,
+  Period,
   RAngleBracket,
   RBracket,
   RCurly,
@@ -68,6 +69,7 @@ class CompilangParser extends CstParser {
       { ALT: () => this.SUBRULE(this.functionStatement) },
       { ALT: () => this.SUBRULE(this.blockStatement) },
       { ALT: () => this.SUBRULE(this.variableStatement) },
+      { ALT: () => this.SUBRULE(this.assignmentStatement) },
       { ALT: () => this.SUBRULE(this.breakStatement) },
       { ALT: () => this.SUBRULE(this.continueStatement) },
       { ALT: () => this.SUBRULE(this.returnStatement) },
@@ -90,6 +92,18 @@ class CompilangParser extends CstParser {
     this.CONSUME(RAngleBracket);
     this.CONSUME(Equals);
     this.SUBRULE(this.expression);
+    this.CONSUME(SemiColon);
+  });
+
+  assignmentStatement = this.RULE("assignmentStatement", () => {
+    this.CONSUME(LAngleBracket);
+    this.CONSUME(Identifier);
+    this.CONSUME(LBracket);
+    this.SUBRULE(this.expression);
+    this.CONSUME(RBracket);
+    this.CONSUME(RAngleBracket);
+    this.CONSUME(Equals);
+    this.SUBRULE2(this.expression);
     this.CONSUME(SemiColon);
   });
 
@@ -220,6 +234,9 @@ class CompilangParser extends CstParser {
     this.CONSUME(Minus);
     this.CONSUME(RAngleBracket);
     this.SUBRULE(this.funcargs);
+    this.OPTION(() => {
+      this.SUBRULE(this.method);
+    });
   });
 
   funcargs = this.RULE("funcargs", () => {
@@ -294,13 +311,42 @@ class CompilangParser extends CstParser {
       { ALT: () => this.SUBRULE(this.callExpression) },
       { ALT: () => this.SUBRULE(this.dictionary) },
       { ALT: () => this.SUBRULE(this.array) },
+      { ALT: () => this.SUBRULE(this.accesor) },
       { ALT: () => this.CONSUME(Integer) },
-      { ALT: () => this.CONSUME(StringLiteral) },
-      { ALT: () => this.CONSUME(Identifier) },
+      { ALT: () => this.SUBRULE(this.string) },
+      { ALT: () => this.SUBRULE(this.variable) },
       { ALT: () => this.CONSUME(True) },
       { ALT: () => this.CONSUME(False) },
-      // { ALT: () => this.SUBRULE(this.parenExpression) },
     ]);
+  });
+
+  accesor = this.RULE("accesor", () => {
+    this.CONSUME(Identifier);
+    this.CONSUME(LBracket);
+    this.SUBRULE(this.expression);
+    this.CONSUME(RBracket);
+  });
+
+  method = this.RULE("method", () => {
+    this.CONSUME(Period);
+    this.CONSUME2(Identifier);
+    this.CONSUME(Minus);
+    this.CONSUME(RAngleBracket);
+    this.SUBRULE(this.funcargs);
+  });
+
+  string = this.RULE("string", () => {
+    this.CONSUME(StringLiteral);
+    this.OPTION(() => {
+      this.SUBRULE(this.method);
+    });
+  });
+
+  variable = this.RULE("variable", () => {
+    this.CONSUME(Identifier);
+    this.OPTION(() => {
+      this.SUBRULE(this.method);
+    });
   });
 
   array = this.RULE("array", () => {
@@ -310,6 +356,9 @@ class CompilangParser extends CstParser {
       DEF: () => this.SUBRULE(this.expression),
     });
     this.CONSUME(RBracket);
+    this.OPTION(() => {
+      this.SUBRULE(this.method);
+    });
   });
 
   dictionary = this.RULE("dictionary", () => {
@@ -323,6 +372,9 @@ class CompilangParser extends CstParser {
       },
     });
     this.CONSUME(RCurly);
+    this.OPTION(() => {
+      this.SUBRULE(this.method);
+    });
   });
 }
 

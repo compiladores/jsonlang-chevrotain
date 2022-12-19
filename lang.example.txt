@@ -1,6 +1,17 @@
 <x> = 1;
 <y: number> = 2;
+
 <z> = "1 2 3 4";
+<a> = z.length->();
+<b> = z.slice->(2, 4);
+
+<c> = {};
+<c["key"]> = "value";
+<c2> = c.keys->();
+
+<d> = [1, 2, 3];
+<d[1]> = 4;
+<d2> = d.length->();
 
 <<Person>> = {
   name: string;

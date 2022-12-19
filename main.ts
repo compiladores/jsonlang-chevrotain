@@ -3,6 +3,10 @@ import { parser } from "./parser/index.ts";
 import { CSTVisitor } from "./CSTVisitor/index.ts";
 import { TypeCheckerVisitor } from "./typeChecker/index.ts";
 
+//TODO: arreglar typechecker para las cosas nuevas. (se tiene que chequear el tipo de a[1])
+//TODO: arreglar jsonlang para las cosas nuevas
+//TODO: tests de las cosas nuevas
+
 export function run(code: string) {
   const res = CompilangLexer.tokenize(code);
 
@@ -30,10 +34,9 @@ export function run(code: string) {
 console.log(
   JSON.stringify(
     run(`
-    <test(a: number, b: number): number> {
-      return a + b;
-    }
-    <x: number> = test->("asd", "asd");
+    <a> = [1, 2, 3];
+    <a[2]> = a[2];
+    <b> = a.length->();
   `)
   )
 );

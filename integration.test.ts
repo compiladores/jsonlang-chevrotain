@@ -40,11 +40,11 @@ Deno.test("return and multiple expressions", () => {
       args: ["a", "b"],
       block: [{ return: { binop: "+", argl: "a", argr: "b" } }],
     },
-    { return: "asd" },
+    { return: { literal: "asd" } },
     { return: 1 },
     { return: true },
     { return: false },
-    { return: "false" },
+    { return: { literal: "false" } },
     { return: "x" },
     { return: { unop: "not", arg: "x" } },
     {
@@ -71,13 +71,17 @@ Deno.test("return and multiple expressions", () => {
     {
       return: [
         "x",
-        "y",
+        { literal: "y" },
         1,
         { binop: "+", argl: 1, argr: 2 },
         { unop: "not", arg: false },
       ],
     },
-    { return: { dict: [{ name: "Test" }, { age: 30 }, { test: [1, 2, 3] }] } },
+    {
+      return: {
+        dict: [{ name: { literal: "Test" } }, { age: 30 }, { test: [1, 2, 3] }],
+      },
+    },
     { return: { call: "sum", args: [2, 3] } },
   ]);
 });
@@ -242,7 +246,7 @@ Deno.test("variables with regular types", () => {
   `);
   assertEquals(res, [
     { set: "x", value: 1 },
-    { set: "y", value: "asd" },
+    { set: "y", value: { literal: "asd" } },
     { set: "z", value: [] },
   ]);
 });
@@ -280,13 +284,16 @@ Deno.test("js magic not allowed", () => {
 Deno.test("string concatenation using +", () => {
   const res = run(`<x> = "aaa" + "bbb";`);
   assertEquals(res, [
-    { set: "x", value: { binop: "+", argl: "aaa", argr: "bbb" } },
+    {
+      set: "x",
+      value: { binop: "+", argl: { literal: "aaa" }, argr: { literal: "bbb" } },
+    },
   ]);
 });
 
 Deno.test("should work correctly if explicit type is any", () => {
   const res = run(`<x: any> = "aaa";`);
-  assertEquals(res, [{ set: "x", value: "aaa" }]);
+  assertEquals(res, [{ set: "x", value: { literal: "aaa" } }]);
 });
 
 Deno.test("should work correctly if implicit type is any", () => {
@@ -361,7 +368,7 @@ Deno.test("custom types and object expression is compatible", () => {
   `);
   assertEquals(res, [
     undefined,
-    { set: "w", value: { dict: [{ name: "test" }, { age: 30 }] } },
+    { set: "w", value: { dict: [{ name: { literal: "test" } }, { age: 30 }] } },
   ]);
 });
 
@@ -376,4 +383,55 @@ Deno.test("cannot redefine type", () => {
     }
   `);
   assertEquals(res.message, "Type already defined");
+});
+
+Deno.test("assign in position", () => {
+  const res = run(`
+    <a> = [1, 2, 3];
+    <a[2]> = 1;
+  `);
+  assertEquals(res, [
+    { set: "a", value: [1, 2, 3] },
+    { set: "a", where: 2, value: 1 },
+  ]);
+});
+
+Deno.test("accesor", () => {
+  const res = run(`
+    <a> = [1, 2, 3];
+    <b> = a[2];
+  `);
+  assertEquals(res, [
+    { set: "a", value: [1, 2, 3] },
+    { set: "b", value: { accesor: { where: 2, object: "a" } } },
+  ]);
+});
+
+Deno.test("methods", () => {
+  const res = run(`
+    <a> = "asdasd";
+    <b: string> = a.slice->(2, 3);
+
+    <c> = { name: "Test", age: 30, test: [1, 2, 3] };
+    <d> = c.keys->();
+  `);
+  assertEquals(res, [
+    { set: "a", value: { literal: "asdasd" } },
+    {
+      set: "b",
+      value: { method: { name: "slice", object: "a", args: [2, 3] } },
+    },
+    {
+      set: "c",
+      value: {
+        dict: [{ name: { literal: "Test" } }, { age: 30 }, { test: [1, 2, 3] }],
+      },
+    },
+    { set: "d", value: { method: { name: "keys", object: "c" } } },
+  ]);
+});
+
+Deno.test("throws if method resulting type mismatch", () => {
+  const res: IncompatibleTypesError = run(`<x: string> = "asd".length->();`);
+  assertEquals(res.message, `Type "number" is not assignable to type "string"`);
 });

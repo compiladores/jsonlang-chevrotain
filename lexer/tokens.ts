@@ -140,6 +140,7 @@ export const Pipe = createToken({ name: "Pipe", pattern: /\|/ });
 export const SemiColon = createToken({ name: "SemiColon", pattern: /\;/ });
 export const Colon = createToken({ name: "Colon", pattern: /\:/ });
 export const Comma = createToken({ name: "Comma", pattern: /\,/ });
+export const Period = createToken({ name: "Period", pattern: /\./ });
 export const True = createToken({ name: "True", pattern: /true/ });
 export const False = createToken({ name: "False", pattern: /false/ });
 export const Plus = createToken({
@@ -207,6 +208,7 @@ export const tokens = [
   SemiColon,
   Colon,
   Comma,
+  Period,
   True,
   False,
   Plus,

@@ -1,7 +1,9 @@
 // deno-lint-ignore-file no-explicit-any
 import { parser } from "../parser/index.ts";
 import {
+  AccesorCstChildren,
   ArrayCstChildren,
+  AssignmentStatementCstChildren,
   BlockStatementCstChildren,
   BreakStatementCstChildren,
   CallExpressionCstChildren,
@@ -20,13 +22,16 @@ import {
   FuncargsDefinitionCstChildren,
   FunctionStatementCstChildren,
   IfStatementCstChildren,
+  MethodCstChildren,
   ParenExpressionCstChildren,
   ReturnStatementCstChildren,
   SimpleExpressionCstChildren,
   StatementCstChildren,
+  StringCstChildren,
   TermCstChildren,
   TopRuleCstChildren,
   UnaryCstChildren,
+  VariableCstChildren,
   VariableStatementCstChildren,
   WhileStatementCstChildren,
 } from "./compilang_cst.d.ts";
@@ -51,6 +56,7 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
   statement(ctx: StatementCstChildren) {
     if (ctx.emptyStatement) return this.visit(ctx.emptyStatement);
     if (ctx.variableStatement) return this.visit(ctx.variableStatement);
+    if (ctx.assignmentStatement) return this.visit(ctx.assignmentStatement);
     if (ctx.breakStatement) return this.visit(ctx.breakStatement);
     if (ctx.continueStatement) return this.visit(ctx.continueStatement);
     if (ctx.blockStatement) return this.visit(ctx.blockStatement);
@@ -114,6 +120,15 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
     return {
       call: ctx.Identifier[0].image,
       args,
+    };
+  }
+
+  assignmentStatement(ctx: AssignmentStatementCstChildren) {
+    const expressions = ctx.expression.map((ex) => this.visit(ex));
+    return {
+      set: ctx.Identifier[0].image,
+      where: expressions[0],
+      value: expressions[1],
     };
   }
 
@@ -250,12 +265,52 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
     if (ctx.Integer) return +ctx.Integer[0].image;
     if (ctx.False) return false;
     if (ctx.True) return true;
-    if (ctx.Identifier) return ctx.Identifier[0].image;
-    if (ctx.StringLiteral)
-      return ctx.StringLiteral[0].image.replace(/^"(.*)"$/, "$1");
+    if (ctx.string) return this.visit(ctx.string);
+    if (ctx.variable) return this.visit(ctx.variable);
+    if (ctx.accesor) return this.visit(ctx.accesor);
     if (ctx.array) return this.visit(ctx.array);
     if (ctx.dictionary) return this.visit(ctx.dictionary);
     if (ctx.callExpression) return this.visit(ctx.callExpression);
+  }
+
+  accesor(ctx: AccesorCstChildren) {
+    return {
+      accesor: {
+        where: this.visit(ctx.expression),
+        object: ctx.Identifier[0].image,
+      },
+    };
+  }
+
+  string(ctx: StringCstChildren) {
+    if (ctx.StringLiteral) {
+      const strLiteral = {
+        literal: ctx.StringLiteral[0].image.replace(/^"(.*)"$/, "$1"),
+      };
+      if (ctx.method) {
+        return {
+          method: {
+            object: strLiteral,
+            ...this.visit(ctx.method),
+          },
+        };
+      }
+      return strLiteral;
+    }
+  }
+
+  variable(ctx: VariableCstChildren) {
+    if (ctx.Identifier) {
+      if (ctx.method) {
+        return {
+          method: {
+            object: ctx.Identifier[0].image,
+            ...this.visit(ctx.method),
+          },
+        };
+      }
+      return ctx.Identifier[0].image;
+    }
   }
 
   array(ctx: ArrayCstChildren) {
@@ -272,6 +327,12 @@ class CompilangCSTVisitor extends BaseCSTVisitor {
       retVal.dict.push({ [key]: value });
     }
     return retVal;
+  }
+
+  method(ctx: MethodCstChildren) {
+    const args = this.visit(ctx.funcargs);
+    if (args && args.length > 0) return { name: ctx.Identifier[0].image, args };
+    return { name: ctx.Identifier[0].image };
   }
 }
 

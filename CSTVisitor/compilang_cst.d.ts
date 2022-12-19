@@ -27,6 +27,7 @@ export type StatementCstChildren = {
   functionStatement?: FunctionStatementCstNode[];
   blockStatement?: BlockStatementCstNode[];
   variableStatement?: VariableStatementCstNode[];
+  assignmentStatement?: AssignmentStatementCstNode[];
   breakStatement?: BreakStatementCstNode[];
   continueStatement?: ContinueStatementCstNode[];
   returnStatement?: ReturnStatementCstNode[];
@@ -55,6 +56,22 @@ export type VariableStatementCstChildren = {
   RAngleBracket: IToken[];
   Equals: IToken[];
   expression: ExpressionCstNode[];
+  SemiColon: IToken[];
+};
+
+export interface AssignmentStatementCstNode extends CstNode {
+  name: "assignmentStatement";
+  children: AssignmentStatementCstChildren;
+}
+
+export type AssignmentStatementCstChildren = {
+  LAngleBracket: IToken[];
+  Identifier: IToken[];
+  LBracket: IToken[];
+  expression: ExpressionCstNode[];
+  RBracket: IToken[];
+  RAngleBracket: IToken[];
+  Equals: IToken[];
   SemiColon: IToken[];
 };
 
@@ -225,6 +242,7 @@ export type CallExpressionCstChildren = {
   Minus: IToken[];
   RAngleBracket: IToken[];
   funcargs: FuncargsCstNode[];
+  method?: MethodCstNode[];
 };
 
 export interface FuncargsCstNode extends CstNode {
@@ -320,11 +338,57 @@ export type SimpleExpressionCstChildren = {
   callExpression?: CallExpressionCstNode[];
   dictionary?: DictionaryCstNode[];
   array?: ArrayCstNode[];
+  accesor?: AccesorCstNode[];
   Integer?: IToken[];
-  StringLiteral?: IToken[];
-  Identifier?: IToken[];
+  string?: StringCstNode[];
+  variable?: VariableCstNode[];
   True?: IToken[];
   False?: IToken[];
+};
+
+export interface AccesorCstNode extends CstNode {
+  name: "accesor";
+  children: AccesorCstChildren;
+}
+
+export type AccesorCstChildren = {
+  Identifier: IToken[];
+  LBracket: IToken[];
+  expression: ExpressionCstNode[];
+  RBracket: IToken[];
+};
+
+export interface MethodCstNode extends CstNode {
+  name: "method";
+  children: MethodCstChildren;
+}
+
+export type MethodCstChildren = {
+  Period: IToken[];
+  Identifier: IToken[];
+  Minus: IToken[];
+  RAngleBracket: IToken[];
+  funcargs: FuncargsCstNode[];
+};
+
+export interface StringCstNode extends CstNode {
+  name: "string";
+  children: StringCstChildren;
+}
+
+export type StringCstChildren = {
+  StringLiteral: IToken[];
+  method?: MethodCstNode[];
+};
+
+export interface VariableCstNode extends CstNode {
+  name: "variable";
+  children: VariableCstChildren;
+}
+
+export type VariableCstChildren = {
+  Identifier: IToken[];
+  method?: MethodCstNode[];
 };
 
 export interface ArrayCstNode extends CstNode {
@@ -337,6 +401,7 @@ export type ArrayCstChildren = {
   expression?: ExpressionCstNode[];
   Comma?: IToken[];
   RBracket: IToken[];
+  method?: MethodCstNode[];
 };
 
 export interface DictionaryCstNode extends CstNode {
@@ -351,6 +416,7 @@ export type DictionaryCstChildren = {
   expression?: ExpressionCstNode[];
   Comma?: IToken[];
   RCurly: IToken[];
+  method?: MethodCstNode[];
 };
 
 export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
@@ -358,6 +424,10 @@ export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   statement(children: StatementCstChildren, param?: IN): OUT;
   emptyStatement(children: EmptyStatementCstChildren, param?: IN): OUT;
   variableStatement(children: VariableStatementCstChildren, param?: IN): OUT;
+  assignmentStatement(
+    children: AssignmentStatementCstChildren,
+    param?: IN
+  ): OUT;
   blockStatement(children: BlockStatementCstChildren, param?: IN): OUT;
   ifStatement(children: IfStatementCstChildren, param?: IN): OUT;
   whileStatement(children: WhileStatementCstChildren, param?: IN): OUT;
@@ -381,6 +451,10 @@ export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   factor(children: FactorCstChildren, param?: IN): OUT;
   unary(children: UnaryCstChildren, param?: IN): OUT;
   simpleExpression(children: SimpleExpressionCstChildren, param?: IN): OUT;
+  accesor(children: AccesorCstChildren, param?: IN): OUT;
+  method(children: MethodCstChildren, param?: IN): OUT;
+  string(children: StringCstChildren, param?: IN): OUT;
+  variable(children: VariableCstChildren, param?: IN): OUT;
   array(children: ArrayCstChildren, param?: IN): OUT;
   dictionary(children: DictionaryCstChildren, param?: IN): OUT;
 }

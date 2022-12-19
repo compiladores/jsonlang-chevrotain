@@ -12,13 +12,16 @@ import {
   FuncargsCstChildren,
   FuncargsDefinitionCstChildren,
   FunctionStatementCstChildren,
+  MethodCstChildren,
   ParenExpressionCstChildren,
   SimpleExpressionCstChildren,
   StatementCstChildren,
+  StringCstChildren,
   TermCstChildren,
   TopRuleCstChildren,
   TypeStatementCstChildren,
   UnaryCstChildren,
+  VariableCstChildren,
   VariableStatementCstChildren,
 } from "../CSTVisitor/compilang_cst.d.ts";
 import { parser } from "../parser/index.ts";
@@ -216,13 +219,31 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
   simpleExpression(ctx: SimpleExpressionCstChildren): DefinedType {
     if (ctx.Integer) return { typename: "number" };
     if (ctx.False || ctx.True) return { typename: "boolean" };
-    if (ctx.Identifier)
-      return this.typedVariables.getTypeForVariable(ctx.Identifier[0].image);
-    if (ctx.StringLiteral) return { typename: "string" };
+    if (ctx.string) return this.visit(ctx.string);
+    if (ctx.variable) return this.visit(ctx.variable);
+    if (ctx.accesor) return { typename: "number" };
     if (ctx.array) return { typename: "array" };
     if (ctx.dictionary) return this.visit(ctx.dictionary);
     if (ctx.callExpression) return this.visit(ctx.callExpression);
-    throw new Error();
+    throw new Error("Invalid expression");
+  }
+
+  string(ctx: StringCstChildren) {
+    if (ctx.StringLiteral) {
+      if (ctx.method) {
+        return this.visit(ctx.method);
+      }
+      return { typename: "string" };
+    }
+  }
+
+  variable(ctx: VariableCstChildren) {
+    if (ctx.Identifier) {
+      if (ctx.method) {
+        return this.visit(ctx.method);
+      }
+      return this.typedVariables.getTypeForVariable(ctx.Identifier[0].image);
+    }
   }
 
   dictionary(ctx: DictionaryCstChildren): DefinedType {
@@ -234,5 +255,15 @@ export class TypeCheckerVisitor extends BaseCSTVisitor {
       retVal.children?.push({ name, typename: type.typename });
     }
     return retVal;
+  }
+
+  method(ctx: MethodCstChildren) {
+    if (ctx.Identifier) {
+      const method = ctx.Identifier[0].image;
+      console.log({ a: "here", method });
+      if (method === "length") return { typename: "number" };
+      if (method === "slice") return { typename: "string" };
+      if (method === "keys") return { typename: "array" };
+    }
   }
 }
